@@ -47,7 +47,7 @@ font-size:18px;
 📍 My Live Location
 </header>
 
-<div class="info" id="status">Please Wait....</div>
+<div class="info" id="status">Detecting your location...</div>
 
 <div id="map"></div>
 
@@ -64,8 +64,7 @@ authDomain: "location-tracker-bba55.firebaseapp.com",
 projectId: "location-tracker-bba55",
 storageBucket: "location-tracker-bba55.firebasestorage.app",
 messagingSenderId: "951484366467",
-appId: "1:951484366467:web:2e936d42b1704027f665b6",
-measurementId: "G-7W31D4YSB7"
+appId: "1:951484366467:web:2e936d42b1704027f665b6"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -79,11 +78,21 @@ maxZoom:19
 
 var marker;
 
+function saveLocation(lat,lon){
+
+addDoc(collection(db,"locations"),{
+latitude:lat,
+longitude:lon,
+time:new Date().toISOString()
+});
+
+}
+
 function getLocation(){
 
 if(navigator.geolocation){
 
-navigator.geolocation.getCurrentPosition(async function(position){
+navigator.geolocation.getCurrentPosition(function(position){
 
 let lat = position.coords.latitude;
 let lon = position.coords.longitude;
@@ -97,12 +106,11 @@ marker = L.marker([lat,lon]).addTo(map)
 .bindPopup("Your Location")
 .openPopup();
 
-await addDoc(collection(db,"locations"),{
-latitude:lat,
-longitude:lon,
-time:new Date().toISOString()
-});
+saveLocation(lat,lon);
 
+},{
+enableHighAccuracy:true,
+timeout:10000
 });
 
 }
