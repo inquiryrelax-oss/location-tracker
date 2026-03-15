@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 
-<title>Admin Tracking Dashboard</title>
+<title>Live User Tracking Dashboard</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -11,8 +12,8 @@
 <style>
 
 body{
-font-family:Arial;
 margin:0;
+font-family:Arial;
 background:#111;
 color:white;
 }
@@ -20,15 +21,16 @@ color:white;
 header{
 background:#000;
 padding:15px;
-font-size:22px;
 text-align:center;
+font-size:22px;
 }
 
 #map{
-height:400px;
+height:350px;
 width:95%;
 margin:auto;
 margin-top:10px;
+border-radius:8px;
 }
 
 table{
@@ -38,14 +40,23 @@ margin-top:20px;
 border-collapse:collapse;
 }
 
-th,td{
+th{
+background:#222;
 padding:10px;
-border:1px solid #333;
+}
+
+td{
+padding:8px;
+border-bottom:1px solid #333;
 text-align:center;
 }
 
-th{
-background:#222;
+.flag{
+width:25px;
+}
+
+.device{
+font-size:20px;
 }
 
 </style>
@@ -54,15 +65,16 @@ background:#222;
 
 <body>
 
-<header>🌍 Live User Tracking Dashboard</header>
+<header>
+🌍 Live User Tracking Dashboard
+</header>
 
 <div id="map"></div>
 
 <table>
 
-<thead>
-
 <tr>
+
 <th>Time</th>
 <th>Country</th>
 <th>City</th>
@@ -71,11 +83,10 @@ background:#222;
 <th>Device</th>
 <th>Latitude</th>
 <th>Longitude</th>
+
 </tr>
 
-</thead>
-
-<tbody id="tableBody"></tbody>
+<tbody id="tableData"></tbody>
 
 </table>
 
@@ -100,46 +111,68 @@ appId: "1:951484366467:web:2e936d42b1704027f665b6"
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-var map = L.map('map').setView([23.8,90.4],6);
+var map = L.map('map').setView([23.7,90.4],6);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
 maxZoom:19
 }).addTo(map);
 
-const tableBody = document.getElementById("tableBody");
+const table = document.getElementById("tableData")
 
-onSnapshot(collection(db,"locations"),(snapshot)=>{
+onSnapshot(collection(db,"locations"),snapshot=>{
 
-tableBody.innerHTML="";
+table.innerHTML=""
 
-snapshot.forEach((doc)=>{
+snapshot.forEach(doc=>{
 
-let data = doc.data();
+let data = doc.data()
 
-L.marker([data.latitude,data.longitude])
-.addTo(map)
-.bindPopup(data.city+" "+data.country);
+let flag=""
+
+if(data.country_code){
+
+flag=`<img class="flag" src="https://flagcdn.com/24x18/${data.country_code.toLowerCase()}.png">`
+
+}
+
+let deviceIcon="💻"
+
+if(data.device=="Mobile") deviceIcon="📱"
 
 let row = `
+
 <tr>
+
 <td>${data.time}</td>
-<td>${data.country}</td>
-<td>${data.city}</td>
-<td>${data.ip}</td>
-<td>${data.isp}</td>
-<td>${data.device}</td>
+
+<td>${flag} ${data.country || "unknown"}</td>
+
+<td>${data.city || "unknown"}</td>
+
+<td>${data.ip || "unknown"}</td>
+
+<td>${data.isp || "unknown"}</td>
+
+<td class="device">${deviceIcon}</td>
+
 <td>${data.latitude}</td>
+
 <td>${data.longitude}</td>
+
 </tr>
-`;
 
-tableBody.innerHTML += row;
+`
 
-});
+table.innerHTML += row
 
-});
+L.marker([data.latitude,data.longitude]).addTo(map)
+
+})
+
+})
 
 </script>
 
 </body>
+
 </html>
