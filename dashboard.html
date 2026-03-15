@@ -129,7 +129,7 @@ maxZoom:19
 
 const table = document.getElementById("tableData")
 
-function openMap(lat,lon){
+window.openMap = function(lat,lon){
 
 let url = "https://www.google.com/maps?q="+lat+","+lon
 window.open(url,"_blank")
