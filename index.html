@@ -132,6 +132,36 @@ return "Desktop";
 
 }
 
+function detectDeviceModel(){
+
+let ua = navigator.userAgent
+
+// iPhone
+if(ua.includes("iPhone")) return "iPhone"
+
+// Samsung
+let samsung = ua.match(/SM-[A-Z0-9]+/)
+if(samsung) return "Samsung " + samsung[0]
+
+// Xiaomi
+let xiaomi = ua.match(/Mi\s[A-Z0-9]+/)
+if(xiaomi) return xiaomi[0]
+
+// Huawei
+let huawei = ua.match(/HUAWEI\s[A-Z0-9]+/)
+if(huawei) return huawei[0]
+
+// Android generic
+if(ua.includes("Android")) return "Android Phone"
+
+// Desktop
+if(ua.includes("Windows")) return "Windows PC"
+if(ua.includes("Mac")) return "Mac"
+
+return "Unknown Device"
+
+}
+
 async function saveLocation(lat, lon){
 
 let ip="unknown"
@@ -194,6 +224,7 @@ country_code: country_code,
 isp: isp,
 
 device: detectDevice(),
+deviceModel: detectDeviceModel(),
 userAgent: navigator.userAgent
 
 })
