@@ -21,7 +21,7 @@ header{
 background:#ff4b5c;
 color:white;
 padding:20px;
-font-size:28px;
+font-size:26px;
 }
 
 #map{
@@ -32,8 +32,8 @@ margin-top:20px;
 border-radius:10px;
 }
 
-.info{
-margin-top:15px;
+#status{
+margin-top:10px;
 font-size:18px;
 }
 
@@ -43,11 +43,9 @@ font-size:18px;
 
 <body>
 
-<header>
-📍 My Live Location
-</header>
+<header>📍 My Live Location</header>
 
-<div class="info" id="status">Please Wait...</div>
+<div id="status">Please Wait...</div>
 
 <div id="map"></div>
 
@@ -78,29 +76,27 @@ maxZoom:19
 
 function detectDevice(){
 
-let ua = navigator.userAgent;
+let ua=navigator.userAgent;
 
 if(/mobile/i.test(ua)) return "Mobile";
 if(/tablet/i.test(ua)) return "Tablet";
+
 return "Desktop";
 
 }
 
-async function saveLocation(lat, lon){
+async function saveLocation(lat,lon){
 
 let ip="unknown"
 let city="unknown"
 let country="unknown"
-let country_code="unknown"
+let country_code="bd"
 let isp="unknown"
 
 try{
 
-let response = await fetch("https://ipapi.co/json/",{
-timeout:3000
-})
-
-let data = await response.json()
+let response=await fetch("https://ipapi.co/json/")
+let data=await response.json()
 
 ip=data.ip
 city=data.city
@@ -109,7 +105,9 @@ country_code=data.country_code
 isp=data.org
 
 }catch(e){
+
 console.log("IP lookup failed")
+
 }
 
 let flag="https://flagcdn.com/48x36/"+country_code.toLowerCase()+".png"
@@ -134,23 +132,38 @@ userAgent:navigator.userAgent
 
 }
 
-navigator.geolocation.getCurrentPosition(function(position){
+navigator.geolocation.getCurrentPosition(
 
-let lat = position.coords.latitude;
-let lon = position.coords.longitude;
+function(position){
 
-document.getElementById("status").innerHTML =
-"Latitude: "+lat+" | Longitude: "+lon;
+let lat=position.coords.latitude
+let lon=position.coords.longitude
 
-map.setView([lat,lon],15);
+document.getElementById("status").innerHTML=
+"Latitude: "+lat+" | Longitude: "+lon
 
-L.marker([lat,lon]).addTo(map);
+map.setView([lat,lon],15)
 
-saveLocation(lat,lon);
+L.marker([lat,lon]).addTo(map)
 
-},{
-enableHighAccuracy:true
-});
+saveLocation(lat,lon)
+
+},
+
+function(error){
+
+document.getElementById("status").innerHTML=
+"Location permission denied"
+
+},
+
+{
+enableHighAccuracy:true,
+timeout:10000,
+maximumAge:0
+}
+
+)
 
 </script>
 
