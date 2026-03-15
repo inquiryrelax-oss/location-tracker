@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Admin Tracking Dashboard</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<style>
+
+body{
+font-family:Arial;
+margin:0;
+background:#111;
+color:white;
+}
+
+header{
+background:#000;
+padding:15px;
+font-size:22px;
+text-align:center;
+}
+
+#map{
+height:400px;
+width:95%;
+margin:auto;
+margin-top:10px;
+}
+
+table{
+width:95%;
+margin:auto;
+margin-top:20px;
+border-collapse:collapse;
+}
+
+th,td{
+padding:10px;
+border:1px solid #333;
+text-align:center;
+}
+
+th{
+background:#222;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>🌍 Live User Tracking Dashboard</header>
+
+<div id="map"></div>
+
+<table>
+
+<thead>
+
+<tr>
+<th>Time</th>
+<th>Country</th>
+<th>City</th>
+<th>IP</th>
+<th>ISP</th>
+<th>Device</th>
+<th>Latitude</th>
+<th>Longitude</th>
+</tr>
+
+</thead>
+
+<tbody id="tableBody"></tbody>
+
+</table>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+
+apiKey: "AIzaSyAilTyrtwRg5nQ-LpTJkhHiBn33JV14Zbc",
+authDomain: "location-tracker-bba55.firebaseapp.com",
+projectId: "location-tracker-bba55",
+storageBucket: "location-tracker-bba55.appspot.com",
+messagingSenderId: "951484366467",
+appId: "1:951484366467:web:2e936d42b1704027f665b6"
+
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+var map = L.map('map').setView([23.8,90.4],6);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+maxZoom:19
+}).addTo(map);
+
+const tableBody = document.getElementById("tableBody");
+
+onSnapshot(collection(db,"locations"),(snapshot)=>{
+
+tableBody.innerHTML="";
+
+snapshot.forEach((doc)=>{
+
+let data = doc.data();
+
+L.marker([data.latitude,data.longitude])
+.addTo(map)
+.bindPopup(data.city+" "+data.country);
+
+let row = `
+<tr>
+<td>${data.time}</td>
+<td>${data.country}</td>
+<td>${data.city}</td>
+<td>${data.ip}</td>
+<td>${data.isp}</td>
+<td>${data.device}</td>
+<td>${data.latitude}</td>
+<td>${data.longitude}</td>
+</tr>
+`;
+
+tableBody.innerHTML += row;
+
+});
+
+});
+
+</script>
+
+</body>
+</html>
