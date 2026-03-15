@@ -55,8 +55,17 @@ text-align:center;
 width:25px;
 }
 
-.device{
-font-size:20px;
+button{
+padding:5px 10px;
+background:#ff4b5c;
+color:white;
+border:none;
+border-radius:4px;
+cursor:pointer;
+}
+
+button:hover{
+background:#ff2a3d;
 }
 
 </style>
@@ -120,6 +129,13 @@ maxZoom:19
 
 const table = document.getElementById("tableData")
 
+function openMap(lat,lon){
+
+let url = "https://www.google.com/maps?q="+lat+","+lon
+window.open(url,"_blank")
+
+}
+
 onSnapshot(collection(db,"locations"),snapshot=>{
 
 table.innerHTML=""
@@ -154,7 +170,7 @@ let row = `
 
 <td>${data.isp || "unknown"}</td>
 
-<td class="device">${deviceIcon}</td>
+<td>${deviceIcon}</td>
 
 <td>${data.latitude}</td>
 
@@ -178,16 +194,7 @@ L.marker([data.latitude,data.longitude]).addTo(map)
 
 })
 
-function openMap(lat,lon){
-
-let url = "https://www.google.com/maps?q="+lat+","+lon
-
-window.open(url,"_blank")
-
-}
-
 </script>
-
 
 </body>
 
