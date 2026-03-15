@@ -95,19 +95,21 @@ let isp="unknown"
 
 try{
 
-let response=await fetch("https://ipapi.co/json/")
-let data=await response.json()
+let res = await fetch("https://ipwho.is/")
+let data = await res.json()
 
-ip=data.ip
-city=data.city
-country=data.country_name
-country_code=data.country_code
-isp=data.org
+if(data.success){
+
+ip = data.ip
+city = data.city
+country = data.country
+country_code = data.country_code
+isp = data.connection.isp
+
+}
 
 }catch(e){
-
-console.log("IP lookup failed")
-
+console.log("IP API failed")
 }
 
 let flag="https://flagcdn.com/48x36/"+country_code.toLowerCase()+".png"
