@@ -156,8 +156,13 @@ if(p.length===2) map[p[0]] = p[1]
 ip = map.ip || ip
 country_code = (map.loc || country_code).toUpperCase()
 
-const geo = await fetch(`https://ipwho.is/${ip}`)
+const geo = await fetch("https://ipinfo.io/json")
 const data = await geo.json()
+
+city = data.city
+country = data.country
+isp = data.org
+ip = data.ip
 
 if(data.success){
 city = data.city || city
