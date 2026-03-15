@@ -83,6 +83,7 @@ font-size:20px;
 <th>Device</th>
 <th>Latitude</th>
 <th>Longitude</th>
+<th>Live Maps</th>
 
 </tr>
 
@@ -159,6 +160,12 @@ let row = `
 
 <td>${data.longitude}</td>
 
+<td>
+<button onclick="openMap(${data.latitude},${data.longitude})">
+View
+</button>
+</td>
+
 </tr>
 
 `
@@ -171,7 +178,16 @@ L.marker([data.latitude,data.longitude]).addTo(map)
 
 })
 
+function openMap(lat,lon){
+
+let url = "https://www.google.com/maps?q="+lat+","+lon
+
+window.open(url,"_blank")
+
+}
+
 </script>
+
 
 </body>
 
