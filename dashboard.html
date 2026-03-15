@@ -90,6 +90,7 @@ background:#ff2a3d;
 <th>IP</th>
 <th>ISP</th>
 <th>Device</th>
+<th>Model</th>
 <th>Latitude</th>
 <th>Longitude</th>
 <th>Live Maps</th>
@@ -171,6 +172,8 @@ let row = `
 <td>${data.isp || "unknown"}</td>
 
 <td>${deviceIcon}</td>
+
+<td>${data.deviceModel || "unknown"}</td>
 
 <td>${data.latitude}</td>
 
