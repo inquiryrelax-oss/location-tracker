@@ -139,49 +139,24 @@ let isp="unknown"
 
 try{
 
-// IP detection
-const trace = await fetch("https://www.cloudflare.com/cdn-cgi/trace")
-const txt = await trace.text()
-
-const lines = txt.split("\n")
-const data = {}
-
-lines.forEach(l=>{
-const p = l.split("=")
-if(p.length===2) data[p[0]] = p[1]
-})
+const res = await fetch("https://ipapi.co/json/")
+const data = await res.json()
 
 ip = data.ip
-
-// ISP + country
-const geo = await fetch(`https://ipwho.is/${ip}`)
-const gdata = await geo.json()
-
-if(gdata.success){
-country = gdata.country
-isp = gdata.connection.isp
-}
-
-// Reverse geocoding (GPS → city)
-const rev = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
-const rdata = await rev.json()
-
-if(rdata.address){
-city = rdata.address.city || rdata.address.town || rdata.address.village
-}
+city = data.city
+country = data.country_name
+isp = data.org
 
 }catch(e){
-console.log(e)
+console.log("IP API error", e)
 }
 
-// UI update
 document.getElementById("ip").innerText = ip
 document.getElementById("city").innerText = city
 document.getElementById("country").innerText = country
 document.getElementById("isp").innerText = isp
 document.getElementById("device").innerText = detectDevice()
 
-// save firebase
 await addDoc(collection(db,"locations"),{
 
 latitude: lat,
