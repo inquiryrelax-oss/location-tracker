@@ -215,15 +215,27 @@ await addDoc(collection(db,"locations"),{
 
 latitude: lat,
 longitude: lon,
-new Date().toLocaleString("en-GB", {
-  timeZone: "Asia/Dhaka",
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: true
-}).replace(",", " |")
+await addDoc(collection(db,"locations"),{
+
+latitude: lat,
+longitude: lon,
+
+time: new Date().toLocaleString("en-BD",{
+timeZone:"Asia/Dhaka"
+}),
+
+ip: ip,
+city: city,
+country: country,
+country_code: country_code,
+flag: flag,
+isp: isp,
+
+device: detectDevice(),
+deviceModel: detectDeviceModel(),
+userAgent: navigator.userAgent
+
+})
 
 ip: ip,
 city: city,
