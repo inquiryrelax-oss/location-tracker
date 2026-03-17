@@ -29,6 +29,7 @@ header{background:#ff4b5c;color:white;padding:15px;text-align:center;font-size:2
 <div class="row">Longitude: <span id="lon"></span></div>
 <div class="row">Thana: <span id="thana"></span></div>
 <div class="row">District: <span id="district"></span></div>
+<div class="row">Country: <span id="country"></span></div>
 <div class="row">IP: <span id="ip"></span></div>
 <div class="row">ISP: <span id="isp"></span></div>
 <div class="row">Device: <span id="device"></span></div>
@@ -45,7 +46,7 @@ header{background:#ff4b5c;color:white;padding:15px;text-align:center;font-size:2
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
 apiKey: "AIzaSyAilTyrtwRg5nQ-LpTJkhHiBn33JV14Zbc",
@@ -60,9 +61,19 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 var map = L.map('map').setView([23.8,90.4],10);
-
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
+// ✅ UNIQUE USER ID
+function getUserId(){
+let id = localStorage.getItem("userId")
+if(!id){
+id = Math.random().toString(36).substring(2,10)
+localStorage.setItem("userId", id)
+}
+return id
+}
+
+// DEVICE
 function detectDevice(){
 let ua=navigator.userAgent;
 if(/mobile/i.test(ua)) return "Mobile";
@@ -72,58 +83,47 @@ return "Desktop";
 
 function detectDeviceModel(){
 let ua=navigator.userAgent;
-if(ua.includes("iPhone")) return "iPhone";
 if(ua.includes("Android")) return "Android Phone";
 if(ua.includes("Windows")) return "Windows PC";
 if(ua.includes("Mac")) return "Mac";
 return "Unknown";
 }
 
+// LOCATION API
 async function getLocationDetails(lat, lon){
-
 try{
 const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
 const data = await res.json()
 let a = data.address
 
-// ✅ Thana detection (priority fix)
-let thana =
-a.suburb ||
-a.village ||
-a.town ||
-a.municipality ||
-a.county ||   // fallback (important for BD)
-"unknown"
+return {
+thana: a.suburb || a.village || a.town || a.municipality || a.county || "unknown",
+district: a.state_district || a.county || "unknown"
+}
+}catch{
+return {thana:"unknown",district:"unknown"}
+}
+}
 
-// ✅ District detection (correct BD logic)
-let district =
-a.state_district ||
-a.county ||
-"unknown"
+// IP API
+async function getIP(){
+let res = await fetch("https://ipinfo.io/json")
+let data = await res.json()
 
 return {
-thana: thana,
-district: district,
-division: a.state || "unknown"
+ip:data.ip,
+org:data.org,
+country:data.country
+}
 }
 
-}catch{
-return {thana:"unknown",district:"unknown",division:"unknown"}
-}
-
-}
-
-async function getIP(){
-try{
-let res = await fetch("https://ipinfo.io/json")
-return await res.json()
-}catch{return {}}
-}
-
+// SAVE (NO DUPLICATE)
 async function save(data){
-await addDoc(collection(db,"locations"),data)
+let id = getUserId()
+await setDoc(doc(db,"locations",id), data)
 }
 
+// GPS
 async function useGPS(pos){
 
 let lat = pos.coords.latitude
@@ -137,6 +137,7 @@ document.getElementById("lat").innerText=lat
 document.getElementById("lon").innerText=lon
 document.getElementById("thana").innerText=loc.thana
 document.getElementById("district").innerText=loc.district
+document.getElementById("country").innerText=ip.country
 document.getElementById("ip").innerText=ip.ip
 document.getElementById("isp").innerText=ip.org
 document.getElementById("device").innerText=detectDevice()
@@ -151,6 +152,7 @@ latitude:lat,
 longitude:lon,
 thana:loc.thana,
 district:loc.district,
+country:ip.country,
 ip:ip.ip,
 isp:ip.org,
 device:detectDevice(),
@@ -161,42 +163,19 @@ time:new Date().toLocaleString()
 
 }
 
+// IP fallback
 async function useIP(){
 
 let ip = await getIP()
 
 document.getElementById("status").innerText="Using IP"
 
-document.getElementById("thana").innerText=ip.city
-document.getElementById("district").innerText=ip.region
+document.getElementById("country").innerText=ip.country
 document.getElementById("ip").innerText=ip.ip
 document.getElementById("isp").innerText=ip.org
 document.getElementById("device").innerText=detectDevice()
 document.getElementById("model").innerText=detectDeviceModel()
 document.getElementById("type").innerText="IP"
-
-if(ip.loc){
-let [lat,lon]=ip.loc.split(",")
-
-document.getElementById("lat").innerText=lat
-document.getElementById("lon").innerText=lon
-
-map.setView([lat,lon],10)
-L.marker([lat,lon]).addTo(map)
-
-save({
-latitude:lat,
-longitude:lon,
-thana:ip.city,
-district:ip.region,
-ip:ip.ip,
-isp:ip.org,
-device:detectDevice(),
-deviceModel:detectDeviceModel(),
-type:"IP",
-time:new Date().toLocaleString()
-})
-}
 
 }
 
