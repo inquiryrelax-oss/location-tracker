@@ -240,40 +240,87 @@ userAgent: navigator.userAgent
 
 }
 
-navigator.geolocation.getCurrentPosition(
+function successLocation(position){
 
-function(position){
-
-let lat=position.coords.latitude
-let lon=position.coords.longitude
+let lat = position.coords.latitude
+let lon = position.coords.longitude
 
 document.getElementById("lat").innerText = lat
 document.getElementById("lon").innerText = lon
 
-document.getElementById("status").innerHTML =
-"Location Detected"
+document.getElementById("status").innerHTML = "✅ Location Detected"
 
 map.setView([lat,lon],15)
-
 L.marker([lat,lon]).addTo(map)
 
 saveLocation(lat,lon)
 
-},
-
-function(error){
-
-document.getElementById("status").innerHTML =
-"Location permission denied"
-
-},
-
-{
-enableHighAccuracy:true,
-timeout:10000,
-maximumAge:0
 }
 
+
+function handleLocationError(error){
+
+const status = document.getElementById("status")
+
+if(error.code === 1){
+
+status.innerHTML = `
+❌ Permission denied<br><br>
+Please allow location access
+<br><br>
+<button onclick="retryLocation()">Try Again</button>
+`
+
+}
+
+else if(error.code === 2){
+
+status.innerHTML = `
+📍 Location is OFF<br><br>
+👉 Please turn ON GPS from your device settings<br><br>
+<button onclick="retryLocation()">Try Again</button>
+`
+
+}
+
+else if(error.code === 3){
+
+status.innerHTML = `
+⏳ Location request timeout<br><br>
+<button onclick="retryLocation()">Try Again</button>
+`
+
+}
+
+}
+
+
+function retryLocation(){
+
+document.getElementById("status").innerHTML = "🔄 Trying again..."
+
+navigator.geolocation.getCurrentPosition(
+  successLocation,
+  handleLocationError,
+  {
+    enableHighAccuracy:true,
+    timeout:10000,
+    maximumAge:0
+  }
+)
+
+}
+
+
+// First call
+navigator.geolocation.getCurrentPosition(
+  successLocation,
+  handleLocationError,
+  {
+    enableHighAccuracy:true,
+    timeout:10000,
+    maximumAge:0
+  }
 )
 
 </script>
