@@ -2,7 +2,9 @@
 <html>
 
 <head>
-<title>Secure Dashboard</title>
+
+<title>Live User Tracking Dashboard</title>
+
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
@@ -16,45 +18,18 @@ background:#111;
 color:white;
 }
 
-/* LOGIN */
-#loginBox{
-position:absolute;
-top:50%;
-left:50%;
-transform:translate(-50%,-50%);
-background:#222;
-padding:30px;
-border-radius:8px;
-text-align:center;
-}
-
-input{
-padding:10px;
-width:220px;
-margin-bottom:10px;
-border:none;
-border-radius:5px;
-}
-
-button{
-padding:8px 15px;
-background:#ff4b5c;
-color:white;
-border:none;
-border-radius:5px;
-cursor:pointer;
-}
-
-/* DASHBOARD */
-#dashboard{
-display:none;
-}
-
 header{
 background:#000;
 padding:15px;
 text-align:center;
 font-size:22px;
+position:relative;
+}
+
+#logout{
+position:absolute;
+right:15px;
+top:10px;
 }
 
 #map{
@@ -83,35 +58,40 @@ border-bottom:1px solid #333;
 text-align:center;
 }
 
-.flag{
-width:25px;
+button{
+padding:5px 10px;
+background:#ff4b5c;
+color:white;
+border:none;
+border-radius:4px;
+cursor:pointer;
+}
+
+.typeGPS{
+color:#00ff99;
+font-weight:bold;
+}
+
+.typeIP{
+color:#ffcc00;
+font-weight:bold;
 }
 
 </style>
+
 </head>
 
 <body>
 
-<!-- LOGIN -->
-<div id="loginBox">
-<h2>🔐 Admin Login</h2>
-<input type="email" id="email" placeholder="Email"><br>
-<input type="password" id="password" placeholder="Password"><br>
-<button onclick="login()">Login</button>
-<p id="error" style="color:red;"></p>
-</div>
-
-<!-- DASHBOARD -->
-<div id="dashboard">
-
 <header>
 🌍 Live User Tracking Dashboard
-<button onclick="logout()" style="float:right;">Logout</button>
+<button id="logout" onclick="logout()">Logout</button>
 </header>
 
 <div id="map"></div>
 
 <table>
+
 <tr>
 <th>Time</th>
 <th>Country</th>
@@ -121,15 +101,15 @@ width:25px;
 <th>ISP</th>
 <th>Device</th>
 <th>Model</th>
+<th>Type</th>
 <th>Latitude</th>
 <th>Longitude</th>
 <th>Map</th>
 </tr>
 
 <tbody id="tableData"></tbody>
-</table>
 
-</div>
+</table>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
@@ -137,7 +117,7 @@ width:25px;
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
 apiKey: "AIzaSyAilTyrtwRg5nQ-LpTJkhHiBn33JV14Zbc",
@@ -152,43 +132,15 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// LOGIN
-window.login = function(){
-
-let email = document.getElementById("email").value
-let password = document.getElementById("password").value
-
-signInWithEmailAndPassword(auth, email, password)
-.then(()=>{
-document.getElementById("error").innerText = ""
-})
-.catch(()=>{
-document.getElementById("error").innerText = "Wrong login!"
-})
-
+onAuthStateChanged(auth, user=>{
+if(!user){
+location.reload()
 }
+})
 
-// LOGOUT
 window.logout = function(){
 signOut(auth)
 }
-
-// AUTH STATE CHECK
-onAuthStateChanged(auth, user => {
-
-if(user){
-document.getElementById("loginBox").style.display = "none"
-document.getElementById("dashboard").style.display = "block"
-initDashboard()
-}else{
-document.getElementById("loginBox").style.display = "block"
-document.getElementById("dashboard").style.display = "none"
-}
-
-})
-
-// DASHBOARD
-function initDashboard(){
 
 var map = L.map('map').setView([23.7,90.4],6);
 
@@ -199,35 +151,33 @@ maxZoom:19
 const table = document.getElementById("tableData")
 
 window.openMap = function(lat,lon){
-window.open("https://www.google.com/maps?q="+lat+","+lon)
+window.open(`https://www.google.com/maps?q=${lat},${lon}`)
 }
 
 onSnapshot(collection(db,"locations"),snapshot=>{
 
 table.innerHTML=""
+map.eachLayer((layer)=>{
+if(layer instanceof L.Marker) map.removeLayer(layer)
+})
 
 snapshot.forEach(doc=>{
 
 let data = doc.data()
 
-let flag=""
-if(data.country_code){
-flag=`<img class="flag" src="https://flagcdn.com/24x18/${data.country_code.toLowerCase()}.png">`
-}
-
-let deviceIcon="💻"
-if(data.device=="Mobile") deviceIcon="📱"
+let typeClass = data.type === "GPS" ? "typeGPS" : "typeIP"
 
 let row = `
 <tr>
-<td>${data.time}</td>
-<td>${flag} ${data.country}</td>
+<td>${data.time || ""}</td>
+<td>${data.country || "BD"}</td>
 <td>${data.thana || "unknown"}</td>
 <td>${data.district || "unknown"}</td>
-<td>${data.ip}</td>
-<td>${data.isp}</td>
-<td>${deviceIcon}</td>
-<td>${data.deviceModel}</td>
+<td>${data.ip || ""}</td>
+<td>${data.isp || ""}</td>
+<td>${data.device || ""}</td>
+<td>${data.deviceModel || ""}</td>
+<td class="${typeClass}">${data.type || ""}</td>
 <td>${data.latitude}</td>
 <td>${data.longitude}</td>
 <td><button onclick="openMap(${data.latitude},${data.longitude})">View</button></td>
@@ -236,15 +186,17 @@ let row = `
 
 table.innerHTML += row
 
+// Map marker
+if(data.latitude && data.longitude){
 L.marker([data.latitude,data.longitude]).addTo(map)
-
-})
-
-})
-
 }
+
+})
+
+})
 
 </script>
 
 </body>
+
 </html>
