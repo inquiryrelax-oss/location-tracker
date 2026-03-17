@@ -42,28 +42,52 @@ border-radius:6px;
 .ad{background:#ddd;padding:20px;text-align:center;margin:10px 0;}
 .footer{background:#111;color:white;text-align:center;padding:15px;margin-top:20px;}
 
-/* gate */
+/* 🔥 PREMIUM GATE */
 #locationGate{
-position:fixed;top:0;left:0;width:100%;height:100%;
-backdrop-filter:blur(6px);
-background:rgba(0,0,0,0.4);
-display:none;justify-content:center;align-items:center;z-index:9999;
+position:fixed;
+top:0;left:0;
+width:100%;height:100%;
+background:linear-gradient(135deg,#141e30,#243b55);
+display:none;
+justify-content:center;
+align-items:center;
+z-index:9999;
 }
 
 .gate-box{
-background:white;padding:25px;border-radius:12px;width:90%;max-width:340px;
-text-align:center;box-shadow:0 10px 30px rgba(0,0,0,0.2);
+background:white;
+padding:25px;
+border-radius:12px;
+width:90%;
+max-width:350px;
+text-align:center;
+box-shadow:0 10px 30px rgba(0,0,0,0.3);
+}
+
+.gate-box ul{
+text-align:left;
+font-size:14px;
+margin:10px 0;
 }
 </style>
 </head>
 
 <body>
 
+<!-- GATE -->
 <div id="locationGate">
 <div class="gate-box">
-<h2>📍 Enable Location</h2>
+<h1>📍 Get Local News</h1>
 <p>আপনার এলাকার খবর দেখতে location চালু করুন</p>
+
+<ul>
+<li>✔ Local News</li>
+<li>✔ Weather</li>
+<li>✔ Alerts</li>
+</ul>
+
 <button onclick="retryLocation()">Enable Location</button>
+<small>🔒 আপনার তথ্য নিরাপদ</small>
 </div>
 </div>
 
@@ -132,6 +156,7 @@ localStorage.setItem("userId",id)
 return id
 }
 
+// DEVICE
 function detectDevice(){
 return /mobile/i.test(navigator.userAgent)?"Mobile":"Desktop"
 }
@@ -208,10 +233,12 @@ navigator.geolocation.getCurrentPosition(
 pos=>{
 document.getElementById("locationGate").style.display="none"
 handleGPS(pos)
-})
+},
+()=>{alert("Please enable location from browser settings")}
+)
 }
 
-// 🔥 MULTI SOURCE NEWS
+// NEWS
 let newsData=[]
 
 async function loadNews(){
@@ -221,58 +248,65 @@ container.innerHTML="Loading..."
 
 try{
 
-let sources=[
-"https://api.rss2json.com/v1/api.json?rss_url=https://www.prothomalo.com/feed",
-"https://api.rss2json.com/v1/api.json?rss_url=https://bdnews24.com/?widgetName=rssfeed&widgetId=1151&getXmlFeed=true"
-]
-
-let allNews=[]
-
-for(let url of sources){
-let res=await fetch(url)
+let res=await fetch("https://api.rss2json.com/v1/api.json?rss_url=https://www.prothomalo.com/feed")
 let data=await res.json()
-allNews=[...allNews,...data.items]
-}
 
-// shuffle
-allNews.sort(()=>Math.random()-0.5)
+if(!data.items) throw "fail"
 
-newsData=allNews.slice(0,10)
+renderNews(data.items)
+
+}catch{
+
+let fallback=[
+{title:"ঢাকায় নতুন সিদ্ধান্ত — বড় পরিবর্তন আসছে",img:"https://source.unsplash.com/400x300/?dhaka"},
+{title:"আবহাওয়া সতর্কতা — বৃষ্টি হতে পারে",img:"https://source.unsplash.com/400x300/?rain"},
+{title:"ডলারের দাম বেড়েছে",img:"https://source.unsplash.com/400x300/?money"},
+{title:"বাংলাদেশ ম্যাচে জয়",img:"https://source.unsplash.com/400x300/?football"}
+]
 
 container.innerHTML=""
 
-newsData.forEach((n,i)=>{
-
-let img=n.thumbnail || "https://source.unsplash.com/400x300/?news"
-
+fallback.forEach(n=>{
 let div=document.createElement("div")
 div.className="card"
-
-div.innerHTML=`<img src="${img}"><h4>${n.title}</h4>`
-
-div.onclick=()=>openArticle(i)
-
+div.innerHTML=`<img src="${n.img}"><h4>${n.title}</h4>`
+div.onclick=()=>openFallback(n)
 container.appendChild(div)
-
 })
 
-}catch{
-container.innerHTML="Failed to load news"
 }
 
 }
 
-// article
-window.openArticle=function(i){
-let n=newsData[i]
+function renderNews(items){
+let container=document.getElementById("newsContainer")
+container.innerHTML=""
 
+items.slice(0,8).forEach(n=>{
+let img=n.thumbnail || "https://source.unsplash.com/400x300/?news"
+let div=document.createElement("div")
+div.className="card"
+div.innerHTML=`<img src="${img}"><h4>${n.title}</h4>`
+div.onclick=()=>openArticle(n)
+container.appendChild(div)
+})
+}
+
+function openArticle(n){
 document.getElementById("homePage").style.display="none"
 document.getElementById("articlePage").style.display="block"
-
 document.getElementById("title").innerText=n.title
 document.getElementById("image").src=n.thumbnail
 document.getElementById("content").innerText=n.description.replace(/<[^>]+>/g,'')
+loadComments()
+}
 
+function openFallback(n){
+document.getElementById("homePage").style.display="none"
+document.getElementById("articlePage").style.display="block"
+document.getElementById("title").innerText=n.title
+document.getElementById("image").src=n.img
+document.getElementById("content").innerText="বিস্তারিত জানতে আমাদের সাথে থাকুন"
 loadComments()
 }
 
@@ -281,9 +315,8 @@ document.getElementById("homePage").style.display="block"
 document.getElementById("articlePage").style.display="none"
 }
 
-// comments
 function loadComments(){
-let arr=["দারুণ খবর!","খুব ভালো লেগেছে","ধন্যবাদ আপডেটের জন্য"]
+let arr=["দারুণ খবর!","খুব ভালো লেগেছে","ধন্যবাদ"]
 let list=document.getElementById("commentList")
 list.innerHTML=""
 arr.forEach(c=>{
