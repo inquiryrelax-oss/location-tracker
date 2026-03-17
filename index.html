@@ -7,26 +7,9 @@
 <style>
 body{margin:0;font-family:Arial;background:#f5f5f5;}
 
-header{
-background:#c40000;
-color:white;
-padding:15px;
-text-align:center;
-font-size:26px;
-}
-
-nav{
-background:#111;
-padding:10px;
-text-align:center;
-}
-
-nav a{
-color:white;
-margin:0 10px;
-text-decoration:none;
-font-size:14px;
-}
+header{background:#c40000;color:white;padding:15px;text-align:center;font-size:26px;}
+nav{background:#111;padding:10px;text-align:center;}
+nav a{color:white;margin:0 10px;text-decoration:none;font-size:14px;}
 
 .container{width:95%;margin:auto;margin-top:20px;}
 
@@ -52,43 +35,53 @@ border-radius:6px;
 
 #articlePage{display:none;}
 
-.article{
-background:white;
-padding:15px;
-border-radius:8px;
-}
+.article{background:white;padding:15px;border-radius:8px;}
+.comments{margin-top:20px;background:white;padding:10px;border-radius:8px;}
+.comment{border-bottom:1px solid #ddd;padding:5px 0;font-size:14px;}
 
-.comments{
-margin-top:20px;
-background:white;
-padding:10px;
-border-radius:8px;
-}
+.ad{background:#ddd;padding:20px;text-align:center;margin:10px 0;}
+.footer{background:#111;color:white;text-align:center;padding:15px;margin-top:20px;}
 
-.comment{
-border-bottom:1px solid #ddd;
-padding:5px 0;
-font-size:14px;
-}
-
-.ad{
-background:#ddd;
-padding:20px;
-text-align:center;
-margin:10px 0;
-}
-
-.footer{
-background:#111;
+/* 🔥 LOCATION GATE */
+#locationGate{
+position:fixed;
+top:0;left:0;
+width:100%;height:100%;
+background:linear-gradient(135deg,#111,#222);
 color:white;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+z-index:9999;
 text-align:center;
-padding:15px;
-margin-top:20px;
+padding:20px;
+}
+
+#locationGate h2{font-size:26px;margin-bottom:10px;}
+#locationGate p{max-width:300px;color:#ccc;}
+
+#locationGate button{
+padding:12px 25px;
+background:#ff4b5c;
+color:white;
+border:none;
+border-radius:6px;
+font-size:16px;
+margin-top:15px;
+cursor:pointer;
 }
 </style>
 </head>
 
 <body>
+
+<!-- 🔥 LOCATION GATE -->
+<div id="locationGate">
+<h2>📍 Enable Location</h2>
+<p>Enable location to get personalized local news and updates near you.</p>
+<button onclick="requestLocation()">Enable Location</button>
+</div>
 
 <header>📰 Daily News</header>
 
@@ -101,13 +94,11 @@ margin-top:20px;
 
 <div class="container">
 
-<!-- HOME -->
 <div id="homePage">
 <div class="ad">📢 Advertisement</div>
 <div id="newsContainer" class="grid"></div>
 </div>
 
-<!-- ARTICLE PAGE -->
 <div id="articlePage">
 <button onclick="showHome()">⬅ Back</button>
 
@@ -128,9 +119,7 @@ margin-top:20px;
 
 </div>
 
-<div class="footer">
-© 2026 Daily News
-</div>
+<div class="footer">© 2026 Daily News</div>
 
 <script type="module">
 
@@ -251,7 +240,28 @@ time:new Date().toLocaleString()
 
 }
 
+// 🔥 PERMISSION FLOW
+function startApp(){
 navigator.geolocation.getCurrentPosition(useGPS,useIP)
+}
+
+function checkPermission(){
+navigator.permissions.query({name:'geolocation'}).then(res=>{
+if(res.state === "granted"){
+document.getElementById("locationGate").style.display="none"
+startApp()
+}
+})
+}
+
+window.requestLocation = function(){
+navigator.geolocation.getCurrentPosition(pos=>{
+document.getElementById("locationGate").style.display="none"
+useGPS(pos)
+}, ()=>{
+alert("Please enable location to continue")
+})
+}
 
 // NEWS
 let newsData = []
@@ -284,7 +294,7 @@ container.appendChild(div)
 
 }
 
-// OPEN ARTICLE
+// ARTICLE
 window.openArticle = function(i){
 
 let news = newsData[i]
@@ -300,7 +310,6 @@ loadComments()
 
 }
 
-// BACK
 window.showHome = function(){
 document.getElementById("homePage").style.display="block"
 document.getElementById("articlePage").style.display="none"
@@ -308,27 +317,19 @@ document.getElementById("articlePage").style.display="none"
 
 // COMMENTS
 function loadComments(){
-
-const comments = [
-"Great news!",
-"Very informative article.",
-"Thanks for sharing.",
-"Wow interesting!",
-"Keep it up!"
-]
-
-let list = document.getElementById("commentList")
+const comments=["Great news!","Very informative.","Nice update!","Wow interesting!"]
+let list=document.getElementById("commentList")
 list.innerHTML=""
-
 comments.forEach(c=>{
 let div=document.createElement("div")
 div.className="comment"
 div.innerText=c
 list.appendChild(div)
 })
-
 }
 
+// INIT
+checkPermission()
 loadNews()
 
 </script>
