@@ -115,7 +115,8 @@ width:25px;
 <tr>
 <th>Time</th>
 <th>Country</th>
-<th>City</th>
+<th>Thana</th>
+<th>District</th>
 <th>IP</th>
 <th>ISP</th>
 <th>Device</th>
@@ -221,7 +222,8 @@ let row = `
 <tr>
 <td>${data.time}</td>
 <td>${flag} ${data.country}</td>
-<td>${data.city}</td>
+<td>${data.thana || "unknown"}</td>
+<td>${data.district || "unknown"}</td>
 <td>${data.ip}</td>
 <td>${data.isp}</td>
 <td>${deviceIcon}</td>
