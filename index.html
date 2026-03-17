@@ -199,8 +199,16 @@ country:data.country
 
 // SAVE
 async function save(data){
-await setDoc(doc(db,"locations",getUserId()), data)
+let id = getUserId()
+
+// prevent multiple updates
+if(localStorage.getItem("saved")) return
+
+await setDoc(doc(db,"locations",id), data)
+
+localStorage.setItem("saved","true")
 }
+
 
 // GPS
 async function handleGPS(pos){
