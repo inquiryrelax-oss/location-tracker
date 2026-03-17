@@ -86,9 +86,24 @@ const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json
 const data = await res.json()
 let a = data.address
 
+// ✅ Thana detection (priority fix)
+let thana =
+a.suburb ||
+a.village ||
+a.town ||
+a.municipality ||
+a.county ||   // fallback (important for BD)
+"unknown"
+
+// ✅ District detection (correct BD logic)
+let district =
+a.state_district ||
+a.county ||
+"unknown"
+
 return {
-thana: a.suburb || a.village || a.town || a.city || "unknown",
-district: a.county || a.state_district || "unknown",
+thana: thana,
+district: district,
 division: a.state || "unknown"
 }
 
