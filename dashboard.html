@@ -2,9 +2,7 @@
 <html>
 
 <head>
-
-<title>Live User Tracking Dashboard</title>
-
+<title>Secure Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
@@ -16,6 +14,40 @@ margin:0;
 font-family:Arial;
 background:#111;
 color:white;
+}
+
+/* LOGIN */
+#loginBox{
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+background:#222;
+padding:30px;
+border-radius:8px;
+text-align:center;
+}
+
+input{
+padding:10px;
+width:220px;
+margin-bottom:10px;
+border:none;
+border-radius:5px;
+}
+
+button{
+padding:8px 15px;
+background:#ff4b5c;
+color:white;
+border:none;
+border-radius:5px;
+cursor:pointer;
+}
+
+/* DASHBOARD */
+#dashboard{
+display:none;
 }
 
 header{
@@ -55,35 +87,32 @@ text-align:center;
 width:25px;
 }
 
-button{
-padding:5px 10px;
-background:#ff4b5c;
-color:white;
-border:none;
-border-radius:4px;
-cursor:pointer;
-}
-
-button:hover{
-background:#ff2a3d;
-}
-
 </style>
-
 </head>
 
 <body>
 
+<!-- LOGIN -->
+<div id="loginBox">
+<h2>🔐 Admin Login</h2>
+<input type="email" id="email" placeholder="Email"><br>
+<input type="password" id="password" placeholder="Password"><br>
+<button onclick="login()">Login</button>
+<p id="error" style="color:red;"></p>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+
 <header>
 🌍 Live User Tracking Dashboard
+<button onclick="logout()" style="float:right;">Logout</button>
 </header>
 
 <div id="map"></div>
 
 <table>
-
 <tr>
-
 <th>Time</th>
 <th>Country</th>
 <th>City</th>
@@ -93,13 +122,13 @@ background:#ff2a3d;
 <th>Model</th>
 <th>Latitude</th>
 <th>Longitude</th>
-<th>Live Maps</th>
-
+<th>Map</th>
 </tr>
 
 <tbody id="tableData"></tbody>
-
 </table>
+
+</div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
@@ -107,20 +136,58 @@ background:#ff2a3d;
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
-
 apiKey: "AIzaSyAilTyrtwRg5nQ-LpTJkhHiBn33JV14Zbc",
 authDomain: "location-tracker-bba55.firebaseapp.com",
 projectId: "location-tracker-bba55",
 storageBucket: "location-tracker-bba55.appspot.com",
 messagingSenderId: "951484366467",
 appId: "1:951484366467:web:2e936d42b1704027f665b6"
-
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
+
+// LOGIN
+window.login = function(){
+
+let email = document.getElementById("email").value
+let password = document.getElementById("password").value
+
+signInWithEmailAndPassword(auth, email, password)
+.then(()=>{
+document.getElementById("error").innerText = ""
+})
+.catch(()=>{
+document.getElementById("error").innerText = "Wrong login!"
+})
+
+}
+
+// LOGOUT
+window.logout = function(){
+signOut(auth)
+}
+
+// AUTH STATE CHECK
+onAuthStateChanged(auth, user => {
+
+if(user){
+document.getElementById("loginBox").style.display = "none"
+document.getElementById("dashboard").style.display = "block"
+initDashboard()
+}else{
+document.getElementById("loginBox").style.display = "block"
+document.getElementById("dashboard").style.display = "none"
+}
+
+})
+
+// DASHBOARD
+function initDashboard(){
 
 var map = L.map('map').setView([23.7,90.4],6);
 
@@ -131,10 +198,7 @@ maxZoom:19
 const table = document.getElementById("tableData")
 
 window.openMap = function(lat,lon){
-
-let url = "https://www.google.com/maps?q="+lat+","+lon
-window.open(url,"_blank")
-
+window.open("https://www.google.com/maps?q="+lat+","+lon)
 }
 
 onSnapshot(collection(db,"locations"),snapshot=>{
@@ -146,47 +210,26 @@ snapshot.forEach(doc=>{
 let data = doc.data()
 
 let flag=""
-
 if(data.country_code){
-
 flag=`<img class="flag" src="https://flagcdn.com/24x18/${data.country_code.toLowerCase()}.png">`
-
 }
 
 let deviceIcon="💻"
-
 if(data.device=="Mobile") deviceIcon="📱"
 
 let row = `
-
 <tr>
-
 <td>${data.time}</td>
-
-<td>${flag} ${data.country || "unknown"}</td>
-
-<td>${data.city || "unknown"}</td>
-
-<td>${data.ip || "unknown"}</td>
-
-<td>${data.isp || "unknown"}</td>
-
+<td>${flag} ${data.country}</td>
+<td>${data.city}</td>
+<td>${data.ip}</td>
+<td>${data.isp}</td>
 <td>${deviceIcon}</td>
-
-<td>${data.deviceModel || "unknown"}</td>
-
+<td>${data.deviceModel}</td>
 <td>${data.latitude}</td>
-
 <td>${data.longitude}</td>
-
-<td>
-<button onclick="openMap(${data.latitude},${data.longitude})">
-View
-</button>
-</td>
-
+<td><button onclick="openMap(${data.latitude},${data.longitude})">View</button></td>
 </tr>
-
 `
 
 table.innerHTML += row
@@ -197,8 +240,9 @@ L.marker([data.latitude,data.longitude]).addTo(map)
 
 })
 
+}
+
 </script>
 
 </body>
-
 </html>
