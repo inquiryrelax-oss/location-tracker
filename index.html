@@ -266,7 +266,7 @@ if(error.code === 1){
 
 status.innerHTML = `
 ❌ Permission denied<br><br>
-Please allow location access
+Please TURN ON  Your Location
 <br><br>
 <button onclick="retryLocation()">Try Again</button>
 `
@@ -297,7 +297,9 @@ status.innerHTML = `
 
 function retryLocation(){
 
-document.getElementById("status").innerHTML = "🔄 Trying again..."
+document.getElementById("status").innerHTML = "🔄 Retrying..."
+
+setTimeout(()=>{
 
 navigator.geolocation.getCurrentPosition(
   successLocation,
@@ -308,6 +310,8 @@ navigator.geolocation.getCurrentPosition(
     maximumAge:0
   }
 )
+
+}, 1000) // small delay helps after turning ON GPS
 
 }
 
