@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<title>Login</title>
+<style>
+body{font-family:Arial;text-align:center;margin-top:100px;}
+input{padding:10px;margin:10px;width:200px;}
+button{padding:10px 20px;}
+</style>
+</head>
+<body>
+
+<h2>Admin Login</h2>
+
+<input type="email" id="email" placeholder="Email"><br> <input type="password" id="password" placeholder="Password"><br>
+
+<button onclick="login()">Login</button>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const app = initializeApp({
+apiKey:"AIzaSyAilTyrtwRg5nQ-LpTJkhHiBn33JV14Zbc",
+authDomain:"location-tracker-bba55.firebaseapp.com",
+projectId:"location-tracker-bba55"
+});
+
+const auth = getAuth(app);
+
+window.login = function(){
+let email = document.getElementById("email").value;
+let pass = document.getElementById("password").value;
+
+signInWithEmailAndPassword(auth, email, pass)
+.then(()=>{
+alert("Login Success");
+window.location.href = "dashboard.html";
+})
+.catch(err=>{
+alert("Login Failed");
+});
+}
+</script>
+
+</body>
+</html>
