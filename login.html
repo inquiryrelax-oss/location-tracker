@@ -2,20 +2,147 @@
 
 <html>
 <head>
-<title>Login</title>
+<title>Secure Admin Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
 <style>
-body{font-family:Arial;text-align:center;margin-top:100px;}
-input{padding:10px;margin:10px;width:200px;}
-button{padding:10px 20px;}
+body{
+margin:0;
+font-family:Arial;
+background:#0f172a;
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+color:white;
+overflow:hidden;
+}
+
+/* hacker glow background */
+body::before{
+content:"";
+position:absolute;
+width:200%;
+height:200%;
+background:radial-gradient(circle,#00ffcc22,transparent);
+animation:move 6s linear infinite;
+}
+@keyframes move{
+0%{transform:translate(0,0)}
+50%{transform:translate(-50px,-50px)}
+100%{transform:translate(0,0)}
+}
+
+.card{
+position:relative;
+background:#111827;
+padding:30px;
+border-radius:12px;
+width:320px;
+box-shadow:0 0 20px #00ffcc33;
+text-align:center;
+z-index:2;
+}
+
+h2{
+margin-bottom:20px;
+color:#00ffcc;
+}
+
+input{
+width:100%;
+padding:12px;
+margin:10px 0;
+border:none;
+border-radius:8px;
+background:#1f2937;
+color:white;
+font-size:14px;
+}
+
+input::placeholder{
+color:#888;
+}
+
+/* password wrapper */
+.pass-box{
+position:relative;
+}
+
+.toggle{
+position:absolute;
+right:10px;
+top:50%;
+transform:translateY(-50%);
+cursor:pointer;
+font-size:12px;
+color:#00ffcc;
+}
+
+/* remember */
+.remember{
+text-align:left;
+font-size:13px;
+margin-top:5px;
+}
+
+button{
+width:100%;
+padding:12px;
+background:#00ffcc;
+color:black;
+border:none;
+border-radius:8px;
+font-size:16px;
+cursor:pointer;
+margin-top:10px;
+transition:0.3s;
+}
+
+button:hover{
+background:#00ddb3;
+}
+
+.error{
+color:#ff4b5c;
+font-size:13px;
+margin-top:10px;
+display:none;
+}
+
+.loader{
+display:none;
+margin-top:10px;
+font-size:13px;
+color:#aaa;
+}
 </style>
+
 </head>
+
 <body>
 
-<h2>Admin Login</h2>
+<div class="card">
 
-<input type="email" id="email" placeholder="Email"><br> <input type="password" id="password" placeholder="Password"><br>
+<h2>⚡ Secure Access</h2>
+
+<input type="email" id="email" placeholder="Email">
+
+<div class="pass-box">
+<input type="password" id="password" placeholder="Password">
+<span class="toggle" onclick="togglePass()">SHOW</span>
+</div>
+
+<div class="remember">
+<input type="checkbox" id="remember"> Remember Me
+</div>
 
 <button onclick="login()">Login</button>
+
+<div class="loader" id="loader">Authenticating...</div>
+<div class="error" id="error">Access Denied</div>
+
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -29,18 +156,53 @@ projectId:"location-tracker-bba55"
 
 const auth = getAuth(app);
 
+/* SHOW / HIDE PASSWORD */
+window.togglePass = function(){
+let p = document.getElementById("password");
+let t = document.querySelector(".toggle");
+
+if(p.type === "password"){
+p.type = "text";
+t.innerText = "HIDE";
+}else{
+p.type = "password";
+t.innerText = "SHOW";
+}
+}
+
+/* REMEMBER ME */
+window.onload = function(){
+let saved = localStorage.getItem("rememberEmail");
+if(saved){
+document.getElementById("email").value = saved;
+document.getElementById("remember").checked = true;
+}
+}
+
+/* LOGIN */
 window.login = function(){
+
 let email = document.getElementById("email").value;
 let pass = document.getElementById("password").value;
+let remember = document.getElementById("remember").checked;
+
+document.getElementById("error").style.display="none";
+document.getElementById("loader").style.display="block";
 
 signInWithEmailAndPassword(auth, email, pass)
 .then(()=>{
-alert("Login Success");
+if(remember){
+localStorage.setItem("rememberEmail", email);
+}else{
+localStorage.removeItem("rememberEmail");
+}
 window.location.href = "dashboard.html";
 })
-.catch(err=>{
-alert("Login Failed");
+.catch(()=>{
+document.getElementById("loader").style.display="none";
+document.getElementById("error").style.display="block";
 });
+
 }
 </script>
 
