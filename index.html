@@ -68,7 +68,7 @@ box-shadow:0 10px 30px rgba(0,0,0,0.2);
 .gate-box button{
 width:100%;
 padding:12px;
-background:#ff4b5c;
+background:#007aff;
 color:white;
 border:none;
 border-radius:6px;
@@ -81,59 +81,6 @@ cursor:pointer;
 background:#ddd;
 }
 
-/* 🔥 iOS STYLE GATE */
-
-#locationGate{
-backdrop-filter: blur(10px);
-background: rgba(0,0,0,0.3);
-}
-
-.gate-box.ios{
-background: rgba(255,255,255,0.95);
-border-radius:16px;
-padding:20px;
-width:85%;
-max-width:320px;
-text-align:center;
-box-shadow:0 10px 40px rgba(0,0,0,0.3);
-animation:iosPop 0.4s ease;
-}
-
-.gate-box.ios h3{
-margin-bottom:8px;
-font-weight:600;
-}
-
-.gate-box.ios p{
-font-size:14px;
-color:#555;
-margin-bottom:15px;
-}
-
-/* iOS button */
-.gate-box.ios button{
-width:100%;
-padding:14px;
-background:#007aff;
-color:white;
-border:none;
-border-radius:10px;
-font-size:16px;
-font-weight:500;
-cursor:pointer;
-transition:0.2s;
-}
-
-.gate-box.ios button:active{
-background:#005ecb;
-transform:scale(0.97);
-}
-
-/* animation */
-@keyframes iosPop{
-from{transform:scale(0.8);opacity:0;}
-to{transform:scale(1);opacity:1;}
-}
 
 </style>
 </head>
@@ -142,7 +89,7 @@ to{transform:scale(1);opacity:1;}
 
 <!-- LOCATION GATE -->
 <div id="locationGate">
-<div class="gate-box ios">
+<div class="gate-box">
 <h2>📍 Enable Location</h2>
 <p>আপনার এলাকার খবর দেখতে location চালু করুন</p>
 <button onclick="retryLocation()">Enable Location</button>
