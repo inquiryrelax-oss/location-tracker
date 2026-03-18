@@ -259,15 +259,30 @@ document.getElementById("locationGate").style.display="flex"
 
 // RETRY
 window.retryLocation = function(){
+
 navigator.geolocation.getCurrentPosition(
 pos=>{
 document.getElementById("locationGate").style.display="none"
 handleGPS(pos)
 },
-()=>{
-alert("Location still blocked")
+err=>{
+
+if(err.code === 1){
+alert("Permission blocked. Please allow location from browser settings.")
+}
+else if(err.code === 2){
+alert("Please turn ON your device location (GPS) and try again.")
+}
+else if(err.code === 3){
+alert("Location request timed out. Try again.")
+}
+else{
+alert("Unable to get location.")
+}
+
 }
 )
+
 }
 
 // 🔥 BANGLA NEWS
