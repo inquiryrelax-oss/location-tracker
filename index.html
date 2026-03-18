@@ -80,6 +80,35 @@ cursor:pointer;
 .card img{
 background:#ddd;
 }
+
+/* 🔥 PREMIUM BUTTON */
+.gate-box button{
+width:100%;
+padding:14px;
+background:linear-gradient(45deg,#ff4b5c,#ff7a7a);
+color:white;
+border:none;
+border-radius:8px;
+font-size:16px;
+cursor:pointer;
+margin-top:12px;
+transition:0.3s;
+animation:pulse 1.5s infinite;
+}
+
+/* hover effect */
+.gate-box button:hover{
+transform:scale(1.05);
+box-shadow:0 0 15px rgba(255,75,92,0.6);
+}
+
+/* pulse animation */
+@keyframes pulse{
+0%{box-shadow:0 0 0 0 rgba(255,75,92,0.7);}
+70%{box-shadow:0 0 0 15px rgba(255,75,92,0);}
+100%{box-shadow:0 0 0 0 rgba(255,75,92,0);}
+}
+
 </style>
 </head>
 
