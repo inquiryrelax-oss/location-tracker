@@ -94,7 +94,7 @@ cursor:pointer;
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const app = initializeApp({
 apiKey:"AIzaSyAilTyrtwRg5nQ-LpTJkhHiBn33JV14Zbc",
@@ -105,30 +105,15 @@ projectId:"location-tracker-bba55"
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// 🔥 SAME PAGE LOGIN SYSTEM
 onAuthStateChanged(auth, user=>{
-
 if(!user){
-
-let email = prompt("Enter Email:")
-let pass = prompt("Enter Password:")
-
-signInWithEmailAndPassword(auth, email, pass)
-.then(()=>{
-location.reload()
-})
-.catch(()=>{
-alert("Wrong login ❌")
-})
-
+window.location.href = "login.html"
 }
-
 })
 
-// logout
 window.logout = function(){
 signOut(auth).then(()=>{
-location.reload()
+window.location.href = "login.html"
 })
 }
 
@@ -148,6 +133,7 @@ zoom: 6,
 layers: [normalMap]
 })
 
+// toggle control
 var baseMaps = {
 "Normal Map": normalMap,
 "Satellite": satelliteMap
@@ -161,14 +147,21 @@ window.openMap = function(lat,lon){
 window.open(`https://www.google.com/maps?q=${lat},${lon}`)
 }
 
-// zoom
+// 🔥 ZOOM FUNCTION
 window.zoomToUser = function(lat, lon){
+
 if(!lat || !lon) return
-map.flyTo([lat, lon], 13, { duration: 1.5 })
+
+map.flyTo([lat, lon], 13, {
+duration: 1.5
+})
+
+// highlight marker
 L.marker([lat, lon]).addTo(map)
+
 }
 
-// realtime data
+// 🔥 REALTIME DATA
 onSnapshot(collection(db,"locations"),snapshot=>{
 
 let rows = ""
@@ -177,6 +170,7 @@ let markers = []
 snapshot.forEach(doc=>{
 
 let data = doc.data()
+
 let typeClass = data.type === "GPS" ? "typeGPS" : "typeIP"
 
 rows += `
@@ -202,12 +196,15 @@ markers.push([data.latitude,data.longitude])
 
 })
 
+// update table
 table.innerHTML = rows
 
+// clear old markers
 map.eachLayer(layer=>{
 if(layer instanceof L.Marker) map.removeLayer(layer)
 })
 
+// add markers
 markers.forEach(m=>{
 L.marker(m).addTo(map)
 })
