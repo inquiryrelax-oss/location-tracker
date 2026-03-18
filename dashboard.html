@@ -42,6 +42,11 @@ border-collapse:collapse;
 th{background:#222;padding:10px;}
 td{padding:8px;border-bottom:1px solid #333;text-align:center;}
 
+tr:hover{
+background:#222;
+cursor:pointer;
+}
+
 button{
 padding:5px 10px;
 background:#ff4b5c;
@@ -100,7 +105,6 @@ projectId:"location-tracker-bba55"
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// ✅ FIXED AUTH (NO RELOAD LOOP)
 onAuthStateChanged(auth, user=>{
 if(!user){
 console.log("Not logged in")
@@ -111,12 +115,29 @@ window.logout = function(){
 signOut(auth)
 }
 
-// MAP
-var map = L.map('map').setView([23.7,90.4],6);
+// 🔥 MAP SETUP
+var normalMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+maxZoom: 19
+})
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-maxZoom:19
-}).addTo(map);
+var satelliteMap = L.tileLayer(
+'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+{ maxZoom: 19 }
+)
+
+var map = L.map('map', {
+center: [23.7, 90.4],
+zoom: 6,
+layers: [normalMap]
+})
+
+// toggle control
+var baseMaps = {
+"Normal Map": normalMap,
+"Satellite": satelliteMap
+};
+
+L.control.layers(baseMaps).addTo(map);
 
 const table = document.getElementById("tableData")
 
@@ -124,20 +145,21 @@ window.openMap = function(lat,lon){
 window.open(`https://www.google.com/maps?q=${lat},${lon}`)
 }
 
+// 🔥 ZOOM FUNCTION
 window.zoomToUser = function(lat, lon){
 
 if(!lat || !lon) return
 
-map.flyTo([lat, lon], 12, {
+map.flyTo([lat, lon], 13, {
 duration: 1.5
 })
 
-// optional: highlight marker
+// highlight marker
 L.marker([lat, lon]).addTo(map)
 
 }
 
-// ✅ OPTIMIZED SNAPSHOT (NO FLICKER)
+// 🔥 REALTIME DATA
 onSnapshot(collection(db,"locations"),snapshot=>{
 
 let rows = ""
@@ -150,7 +172,7 @@ let data = doc.data()
 let typeClass = data.type === "GPS" ? "typeGPS" : "typeIP"
 
 rows += `
-<tr onclick="zoomToUser(${data.latitude},${data.longitude})" style="cursor:pointer;">
+<tr onclick="zoomToUser(${data.latitude},${data.longitude})">
 <td>${data.time || ""}</td>
 <td>${data.country || "unknown"}</td>
 <td>${data.thana || "unknown"}</td>
@@ -172,7 +194,7 @@ markers.push([data.latitude,data.longitude])
 
 })
 
-// update once (smooth)
+// update table
 table.innerHTML = rows
 
 // clear old markers
@@ -180,7 +202,7 @@ map.eachLayer(layer=>{
 if(layer instanceof L.Marker) map.removeLayer(layer)
 })
 
-// add new markers
+// add markers
 markers.forEach(m=>{
 L.marker(m).addTo(map)
 })
