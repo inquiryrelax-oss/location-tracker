@@ -26,11 +26,13 @@ border-radius:8px;
 cursor:pointer;
 }
 
+/* ✅ merged */
 .card img{
 width:100%;
 height:150px;
 object-fit:cover;
 border-radius:6px;
+background:#ddd;
 }
 
 #articlePage{display:none;}
@@ -42,54 +44,21 @@ border-radius:6px;
 .ad{background:#ddd;padding:20px;text-align:center;margin:10px 0;}
 .footer{background:#111;color:white;text-align:center;padding:15px;margin-top:20px;}
 
-/* LOCATION GATE */
+/* ✅ merged (duplicate removed) */
 #locationGate{
 position:fixed;
 top:0;left:0;
 width:100%;height:100%;
-backdrop-filter:blur(6px);
-background:rgba(0,0,0,0.4);
+backdrop-filter:blur(10px);
+background:rgba(0,0,0,0.3);
 display:none;
 justify-content:center;
 align-items:center;
 z-index:9999;
 }
 
-.gate-box{
-background:white;
-padding:25px;
-border-radius:12px;
-width:90%;
-max-width:340px;
-text-align:center;
-box-shadow:0 10px 30px rgba(0,0,0,0.2);
-}
-
-.gate-box button{
-width:100%;
-padding:12px;
-background:#007aff;
-color:white;
-border:none;
-border-radius:6px;
-font-size:16px;
-margin-top:10px;
-cursor:pointer;
-}
-
-.card img{
-background:#ddd;
-}
-
-/* 🔥 iOS STYLE GATE */
-
-#locationGate{
-backdrop-filter: blur(10px);
-background: rgba(0,0,0,0.3);
-}
-
 .gate-box.ios{
-background: rgba(255,255,255,0.95);
+background:rgba(255,255,255,0.95);
 border-radius:16px;
 padding:20px;
 width:85%;
@@ -110,7 +79,6 @@ color:#555;
 margin-bottom:15px;
 }
 
-/* iOS button */
 .gate-box.ios button{
 width:100%;
 padding:14px;
@@ -129,7 +97,6 @@ background:#005ecb;
 transform:scale(0.97);
 }
 
-/* animation */
 @keyframes iosPop{
 from{transform:scale(0.8);opacity:0;}
 to{transform:scale(1);opacity:1;}
@@ -143,10 +110,9 @@ to{transform:scale(1);opacity:1;}
 <!-- LOCATION GATE -->
 <div id="locationGate">
 <div class="gate-box ios">
-<h2>🔞 বয়স যাচাই</h2>
-<p>আপনার বয়স কি ১৮ বছরের বেশি?</p>
-<button onclick="retryLocation()">হ্যাঁ, আমি ১৮+</button>
-<button onclick="retryLocation()">না</button>
+<h2>📍 Enable Location</h2>
+<p>আপনার এলাকার খবর দেখতে location চালু করুন</p>
+<button onclick="retryLocation()">Enable Location</button>
 </div>
 </div>
 
@@ -341,38 +307,14 @@ alert("Unable to get location.")
 
 }
 
-// 🔥 BANGLA NEWS
+// NEWS
 const newsData = [
-{
-title:"ঢাকায় আবারও বৃষ্টির পূর্বাভাস",
-image:"https://images.unsplash.com/photo-1500375592092-40eb2168fd21",
-summary:"আগামী ২৪ ঘণ্টায় ভারী বৃষ্টির সম্ভাবনা রয়েছে"
-},
-{
-title:"বাংলাদেশের জয়",
-image:"https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",
-summary:"নাটকীয় জয়ে সিরিজ জিতলো বাংলাদেশ"
-},
-{
-title:"নতুন ফোন বাজারে",
-image:"https://images.unsplash.com/photo-1511707171634-5f897ff02aa9",
-summary:"নতুন ফিচার নিয়ে বাজারে এসেছে ফোন"
-},
-{
-title:"ডলার বাড়ছে",
-image:"https://images.unsplash.com/photo-1567427017947-545c5f8d16ad",
-summary:"বাজারে প্রভাব পড়ছে"
-},
-{
-title:"ঢাকায় যানজট",
-image:"https://images.unsplash.com/photo-1502877338535-766e1452684a",
-summary:"মানুষ ভোগান্তিতে"
-},
-{
-title:"AI প্রযুক্তি চমক",
-image:"https://images.unsplash.com/photo-1677442136019-21780ecad995",
-summary:"বিশ্বে নতুন উদ্ভাবন"
-}
+{title:"ঢাকায় আবারও বৃষ্টির পূর্বাভাস",image:"https://images.unsplash.com/photo-1500375592092-40eb2168fd21",summary:"আগামী ২৪ ঘণ্টায় ভারী বৃষ্টির সম্ভাবনা রয়েছে"},
+{title:"বাংলাদেশের জয়",image:"https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",summary:"নাটকীয় জয়ে সিরিজ জিতলো বাংলাদেশ"},
+{title:"নতুন ফোন বাজারে",image:"https://images.unsplash.com/photo-1511707171634-5f897ff02aa9",summary:"নতুন ফিচার নিয়ে বাজারে এসেছে ফোন"},
+{title:"ডলার বাড়ছে",image:"https://images.unsplash.com/photo-1567427017947-545c5f8d16ad",summary:"বাজারে প্রভাব পড়ছে"},
+{title:"ঢাকায় যানজট",image:"https://images.unsplash.com/photo-1502877338535-766e1452684a",summary:"মানুষ ভোগান্তিতে"},
+{title:"AI প্রযুক্তি চমক",image:"https://images.unsplash.com/photo-1677442136019-21780ecad995",summary:"বিশ্বে নতুন উদ্ভাবন"}
 ]
 
 // LOAD NEWS
