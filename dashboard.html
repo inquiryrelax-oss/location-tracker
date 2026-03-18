@@ -124,6 +124,19 @@ window.openMap = function(lat,lon){
 window.open(`https://www.google.com/maps?q=${lat},${lon}`)
 }
 
+window.zoomToUser = function(lat, lon){
+
+if(!lat || !lon) return
+
+map.flyTo([lat, lon], 12, {
+duration: 1.5
+})
+
+// optional: highlight marker
+L.marker([lat, lon]).addTo(map)
+
+}
+
 // ✅ OPTIMIZED SNAPSHOT (NO FLICKER)
 onSnapshot(collection(db,"locations"),snapshot=>{
 
@@ -137,7 +150,7 @@ let data = doc.data()
 let typeClass = data.type === "GPS" ? "typeGPS" : "typeIP"
 
 rows += `
-<tr>
+<tr onclick="zoomToUser(${data.latitude},${data.longitude})" style="cursor:pointer;">
 <td>${data.time || ""}</td>
 <td>${data.country || "unknown"}</td>
 <td>${data.thana || "unknown"}</td>
