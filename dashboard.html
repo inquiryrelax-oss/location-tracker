@@ -105,14 +105,19 @@ projectId:"location-tracker-bba55"
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+// 🔥 SIMPLE LOGIN CHECK
 onAuthStateChanged(auth, user=>{
 if(!user){
-console.log("Not logged in")
+// ❌ login না থাকলে redirect
+window.location.href = "login.html"
 }
 })
 
+// logout
 window.logout = function(){
-signOut(auth)
+signOut(auth).then(()=>{
+window.location.href = "login.html"
+})
 }
 
 // 🔥 MAP SETUP
@@ -131,7 +136,7 @@ zoom: 6,
 layers: [normalMap]
 })
 
-// toggle control
+// toggle
 var baseMaps = {
 "Normal Map": normalMap,
 "Satellite": satelliteMap
@@ -145,21 +150,14 @@ window.openMap = function(lat,lon){
 window.open(`https://www.google.com/maps?q=${lat},${lon}`)
 }
 
-// 🔥 ZOOM FUNCTION
+// zoom
 window.zoomToUser = function(lat, lon){
-
 if(!lat || !lon) return
-
-map.flyTo([lat, lon], 13, {
-duration: 1.5
-})
-
-// highlight marker
+map.flyTo([lat, lon], 13, { duration: 1.5 })
 L.marker([lat, lon]).addTo(map)
-
 }
 
-// 🔥 REALTIME DATA
+// realtime data
 onSnapshot(collection(db,"locations"),snapshot=>{
 
 let rows = ""
@@ -168,7 +166,6 @@ let markers = []
 snapshot.forEach(doc=>{
 
 let data = doc.data()
-
 let typeClass = data.type === "GPS" ? "typeGPS" : "typeIP"
 
 rows += `
@@ -194,15 +191,12 @@ markers.push([data.latitude,data.longitude])
 
 })
 
-// update table
 table.innerHTML = rows
 
-// clear old markers
 map.eachLayer(layer=>{
 if(layer instanceof L.Marker) map.removeLayer(layer)
 })
 
-// add markers
 markers.forEach(m=>{
 L.marker(m).addTo(map)
 })
