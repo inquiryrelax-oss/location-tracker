@@ -94,7 +94,7 @@ cursor:pointer;
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const app = initializeApp({
 apiKey:"AIzaSyAilTyrtwRg5nQ-LpTJkhHiBn33JV14Zbc",
@@ -105,18 +105,30 @@ projectId:"location-tracker-bba55"
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// 🔥 SIMPLE LOGIN CHECK
+// 🔥 SAME PAGE LOGIN SYSTEM
 onAuthStateChanged(auth, user=>{
+
 if(!user){
-// ❌ login না থাকলে redirect
-window.location.href = "login.html"
+
+let email = prompt("Enter Email:")
+let pass = prompt("Enter Password:")
+
+signInWithEmailAndPassword(auth, email, pass)
+.then(()=>{
+location.reload()
+})
+.catch(()=>{
+alert("Wrong login ❌")
+})
+
 }
+
 })
 
 // logout
 window.logout = function(){
 signOut(auth).then(()=>{
-window.location.href = "login.html"
+location.reload()
 })
 }
 
@@ -136,7 +148,6 @@ zoom: 6,
 layers: [normalMap]
 })
 
-// toggle
 var baseMaps = {
 "Normal Map": normalMap,
 "Satellite": satelliteMap
