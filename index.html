@@ -82,7 +82,6 @@ margin-bottom:15px;
 .gate-box.ios button{
 width:100%;
 padding:14px;
-margin: 10px;
 background:#007aff;
 color:white;
 border:none;
@@ -91,6 +90,28 @@ font-size:16px;
 font-weight:500;
 cursor:pointer;
 transition:0.2s;
+}
+
+/* spacing fix */
+.gate-box.ios button{
+margin-top:10px;
+}
+
+/* YES button */
+.yes-btn{
+background:#007aff;
+color:white;
+}
+
+/* NO button */
+.no-btn{
+background:#eee;
+color:#333;
+border:1px solid #ccc;
+}
+
+.no-btn:hover{
+background:#ddd;
 }
 
 .gate-box.ios button:active{
@@ -113,7 +134,7 @@ to{transform:scale(1);opacity:1;}
 <div class="gate-box ios">
 <h2>🔞 বয়স যাচাই</h2>
 <p>আপনার বয়স কি ১৮ বছরের বেশি?</p>
-<button onclick="retryLocation()">হ্যাঁ, আমি ১৮+</button>
+<button class="yes-btn" onclick="retryLocation()">হ্যাঁ, আমি ১৮+</button>
 <button class="no-btn" onclick="retryLocation()">না</button>
 </div>
 </div>
